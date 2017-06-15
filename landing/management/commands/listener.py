@@ -1,6 +1,7 @@
 from slackclient import SlackClient
 from django.core.management.base import BaseCommand
 import time
+from landing.utils import handle_slack_event
 
 class Command(BaseCommand):
     help = 'Starts the bot for the first'
@@ -12,8 +13,8 @@ class Command(BaseCommand):
             while True:
                 events = client.rtm_read()
                 for event in events:
-                    if 'type' in event.keys() and event['type']=='message': # and event['text']=='hi':
-                        client.rtm_send_message(event['channel'],event['text'])
+                    print(event)
+                    handle_slack_event(event)
                 time.sleep(1)
         else:
             print("unable to connect");

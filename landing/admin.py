@@ -1,3 +1,5 @@
 from django.contrib import admin
+from landing.models import UserInteractionState
 
-# Register your models here.
+
+admin.site.register(UserInteractionState)

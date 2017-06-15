@@ -54,7 +54,7 @@ class Team(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.team
+        return self.name
 
     def get_slack_socket(self):
         sc = SlackClient(self.slack_bot_access_token)

@@ -1,4 +1,105 @@
+
 <html>
-    <p>Hi there!</p>
-    <p>It works!</p>
+{% load staticfiles %}
+<link rel="stylesheet" href="{% static "bootstrap.css" %}">
+
+{#<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>#}
+
+<style>
+    .invoice-title h2, .invoice-title h3 {
+    display: inline-block;
+}
+
+.table > tbody > tr > .no-line {
+    border-top: none;
+}
+
+.table > thead > tr > .no-line {
+    border-bottom: none;
+}
+
+.table > tbody > tr > .thick-line {
+    border-top: 2px solid;
+}
+</style>
+<body>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2">
+    		<div class="invoice-title">
+    			<h2>Invoice order # {{ invoice.id }}</h2><form action="" method="post">{% csrf_token %}<h3 class="btn-lg"><input type="submit" value="Download as pdf"></h3></form>
+    		</div>
+    		<hr>
+    		<div class="row">
+    			<div class="col-xs-6">
+    				<address>
+    				<strong>Billed To:</strong><br>
+    					{{ invoice.client }}<br>
+    					<br><br>
+    				</address>
+    			</div>
+                <div class="col-xs-6 text-right">
+    				<address>
+    				<strong>Created by:</strong><br>
+    					{{ invoice.author }}<br>
+    					<br><br>
+    				</address>
+    			</div>
+            </div>
+
+    		<div class="row">
+                <div class="col-xs-6">
+    				<address>
+    					<strong>Invoice created on:</strong><br>
+    					{{ invoice.created_at.date }}<br><br>
+    				</address>
+    			</div>
+    		</div>
+    	</div>
+    </div>
+
+    <div class="row">
+    	<div class="col-md-8 col-md-offset-2">
+    		<div class="panel panel-default">
+    			<div class="panel-heading">
+    				<h3 class="panel-title"><strong>Order summary</strong></h3>
+    			</div>
+    			<div class="panel-body">
+    				<div class="table-responsive">
+    					<table class="table table-condensed">
+    						<thead>
+                                <tr>
+        							<td><strong>Description</strong></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td class="text-right"><strong>Amount</strong></td>
+                                </tr>
+    						</thead>
+    						<tbody>
+    							<!-- foreach ($order->lineItems as $line) or some such thing here -->
+    							<tr>
+    								<td>{{ invoice.description }}</td>
+                                    <td></td>
+                                    <td></td>
+                                    <td class="text-right">{{ invoice.get_amount }}</td>
+    							</tr>
+                                <tr>
+    								<td class="thick-line"></td>
+    								<td class="thick-line"></td>
+
+    								<td class="thick-line text-center"><strong>Total</strong></td>
+    								<td class="thick-line text-right">{{ invoice.get_amount }}</td>
+    							</tr>
+
+    						</tbody>
+    					</table>
+    				</div>
+    			</div>
+    		</div>
+    	</div>
+    </div>
+</div>
+
+</body>
 </html>

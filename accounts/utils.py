@@ -155,13 +155,32 @@ def build_attachments_for_edited_invoice(invoice):
     return [edited_attachment]
 
 
-def build_attachment_for_finished_editing(invoice):
+def build_attachment_for_confirmed_invoice(invoice):
 
     attachment = {"title": "Invoice #%d" % invoice.id, "text": "", "color": "good"}
 
-    attachment["callback_id"] = "invoice_confirmation:%d" % invoice.id
+    attachment["callback_id"] = "invoice:%d" % invoice.id
 
     line_item = invoice.line_items.first()
+
+    actions = [
+        {
+            "name": "created_invoice",
+            "text": "Get Pdf",
+            "value": "create_pdf",
+            "type": "button",
+            "style": "primary"
+        },
+        {
+            "name": "created_invoice",
+            "text": "Send",
+            "value": "send",
+            "type": "button",
+            "style": "primary"
+        }
+    ]
+
+    attachment["actions"] = actions
 
     fields = [
         {

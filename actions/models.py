@@ -4,7 +4,7 @@ from djmoney.models.fields import MoneyField
 from accounts.models import Employee, Customer
 from landing.models import UserInteractionState
 from accounts.utils import build_attachments_for_invoice, build_attachments_for_edited_invoice, \
-    build_attachment_for_finished_editing
+    build_attachment_for_confirmed_invoice
 
 
 class Action(models.Model):
@@ -28,12 +28,14 @@ class Invoice(models.Model):
         (SENT, "Sent"),
         (NOT_SENT, "Not Sent")
     )
-
+    created_at = models.DateTimeField(auto_now_add=True)
     description = models.CharField(max_length=500, blank=True, null=True)
     client = models.ForeignKey('accounts.Customer', on_delete=models.CASCADE)  ##client name from Client model
     author = models.ForeignKey('accounts.Employee', on_delete=models.CASCADE)
     payment_status = models.CharField(max_length=10, default=UNPAID, choices=PAYMENT_STATUS_CHOICES)
     sent_status = models.CharField(max_length=10, default=NOT_SENT, choices=SENT_STATUS_CHOICES)
+    confirmation_status = models.BooleanField(default=False)
+    cancel_status = models.BooleanField(default=False)
 
     def __str__(self):
         return "%s - %s - %s" % (str(self.client), self.description, str(self.get_amount()))
@@ -50,16 +52,30 @@ class Invoice(models.Model):
         invoice = Invoice.objects.filter(id=invoice_id).first()
         selected_value = json_data['actions'][0]['value']
         attachments = None
+
         if selected_value == "edit":
             from accounts.utils import build_attachments_for_edited_invoice
             attachments = build_attachments_for_edited_invoice(invoice)
-            response_message = "Todo: handle edition of invoice"
+            response_message = "Edit your invoice"
+
         elif selected_value == "confirm":
-            response_message = "Todo: handle confirmation of invoice"
+
+            invoice.confirmation_status = True
+            invoice.save()
+
+            attachments = build_attachment_for_confirmed_invoice(invoice)
+            response_message = "Your invoice"
+
         elif selected_value == "cancel":
+
+            invoice.cancel_status = True
+            invoice.save()
+
             response_message = "Your invoice has been deleted"
 
         return response_message, attachments
+
+
 
 
 
@@ -122,7 +138,7 @@ class LineItem(models.Model):
             elif selected_value == "finish_editing":
                 response_message = "Your invoice has been edited."
                 invoice = Invoice.objects.filter(id = line_item_id).first()
-                attachments = build_attachment_for_finished_editing(invoice)
+                attachments = build_attachments_for_invoice(invoice)
 
 
         return response_message, attachments

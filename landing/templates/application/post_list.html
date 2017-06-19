@@ -28,7 +28,7 @@
     <div class="row">
         <div class="col-md-8 col-md-offset-2">
     		<div class="invoice-title">
-    			<h2>Invoice order # {{ invoice.id }}</h2><form action="" method="post">{% csrf_token %}<h3 class="btn-lg"><input type="submit" value="Download as pdf"></h3></form>
+    			<h2>Invoice order # {{ invoice.id }}</h2><form action="" method="post">{% csrf_token %}<h3 class="btn-lg"><input type="submit" value="Download as pdf" name="download"></h3></form>
     		</div>
     		<hr>
     		<div class="row">
@@ -87,18 +87,29 @@
                                 <tr>
     								<td class="thick-line"></td>
     								<td class="thick-line"></td>
-
     								<td class="thick-line text-center"><strong>Total</strong></td>
     								<td class="thick-line text-right">{{ invoice.get_amount }}</td>
     							</tr>
 
     						</tbody>
     					</table>
+                        <form action="" method="POST">
+                          <script
+                            src="https://checkout.stripe.com/v2/checkout.js" class="stripe-button"
+                            data-key="pk_test_G5YhIkq2PEq84lwU064TZENT"
+                            data-amount={{ amount }}
+                            data-name="InvoiceTron"
+                            data-description="demo">
+                          </script>
+                        </form>
     				</div>
     			</div>
+
     		</div>
     	</div>
+
     </div>
+
 </div>
 
 </body>

@@ -61,16 +61,21 @@ def slack_hook(request):
         return HttpResponse("Ok")
 
 
-def generate_pdf(request, invoice_id):
+def generate_invoice(request, invoice_id):
     try:
         invoice = Invoice.objects.get(pk=invoice_id)
+        amount = invoice.get_amount()
     except Invoice.DoesNotExist:
         raise Http404("Invoice does not exist")
 
     if request.method == "GET":
-       return render(request, 'application/post_list.html', {'invoice': invoice})
+       return render(request, 'application/post_list.html', {'invoice': invoice, 'amount': amount})
     else:
         return render_to_pdf('application/post_list.html', {'invoice': invoice})
+
+
+
+
 
 def render_to_pdf(template_src, context_dict):
     template = get_template(template_src)

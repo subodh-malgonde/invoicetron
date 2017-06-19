@@ -1,5 +1,6 @@
 from accounts.models import Employee, Team, Customer
-from accounts.utils import build_attachments_for_edited_invoice, send_message_to_user, build_attachments_for_invoice
+from accounts.utils import build_attachments_for_edited_invoice, send_message_to_user, build_attachments_for_invoice, \
+    build_attachment_for_confirmed_invoice
 from landing.models import UserInteractionState
 from actions.models import LineItem, Invoice
 import boto3
@@ -31,7 +32,7 @@ def handle_slack_event(event):
                         userId=username,
                         inputText=inputstring
                     )
-
+                    print(response)
                     if response['intentName'] == 'create_invoice':
                         if response['dialogState'] == 'ElicitSlot':
                             if response['slots']['ClientName'] != 'None':
@@ -80,7 +81,7 @@ def handle_slack_event(event):
                                                 text=message)
                                 create_invoice(invoice_client, user, amount, description='None')
 
-                    if response['intentName'] == 'create_client':
+                    elif response['intentName'] == 'create_client':
                         if response['dialogState'] == 'ElicitSlot':
                             client.api_call('chat.postMessage', channel=event['channel'],
                                             text=response['message'])
@@ -119,6 +120,24 @@ def handle_slack_event(event):
                                                 text=message)
                                 create_invoice(invoice_client, employee, total_amount, description='None')
 
+                    elif response['intentName'] == 'list_invoices':
+                        if response['dialogState'] == 'Fulfilled':
+
+                            invoice = Invoice.objects.filter(payment_status=Invoice.UNPAID, sent_status=Invoice.NOT_SENT)[:5]
+                            for invoice in invoice:
+                                print(invoice)
+                                attachments = build_attachment_for_confirmed_invoice(invoice)
+                                attachment_str = json.dumps(attachments)
+                                client.api_call('chat.postMessage', channel=event['channel'],
+                                                text="invoice", attachments=attachment_str)
+
+                    else:
+                        client.api_call('chat.postMessage', channel=event['channel'],
+                                        text="NO intent match")
+
+
+
+
                 elif state.state == UserInteractionState.LINE_ITEM_DESCRIPTION_AWAITED:
 
                     line_item = LineItem.objects.filter(edited_details_awaited_from=employee).order_by('-updated_at').first()
@@ -127,6 +146,7 @@ def handle_slack_event(event):
 
                     line_item.description = event['text']
                     line_item.edited_details_awaited_from = None
+                    line_item.invoice.description = event['text']
                     line_item.save()
                     state.state = UserInteractionState.CHILLING
                     state.save()
@@ -146,6 +166,7 @@ def handle_slack_event(event):
                     line_item = LineItem.objects.filter(edited_details_awaited_from=employee).first()
                     line_item.amount = event['text']
                     line_item.edited_details_awaited_from = None
+
                     line_item.save()
                     state.state = UserInteractionState.CHILLING
                     state.save()
@@ -164,6 +185,21 @@ def create_invoice(invoice_client, user, amount, description):
     line_item.edited_details_awaited_from = user
     line_item.save()
 
+
+
+{'message': 'Here is your list',
+ 'sessionAttributes': {'invoice': '{"Payment_status": null, "Sent_status": null}'},
+ 'slots': {'Paid': None, 'Sent': None},
+ 'ResponseMetadata': {'HTTPHeaders': {'x-amzn-requestid': 'c187c0c2-54e6-11e7-81e0-b55a4d4d55ab',
+                                      'date': 'Mon, 19 Jun 2017 11:59:31 GMT',
+                                      'connection': 'keep-alive',
+                                      'content-length': '244',
+                                      'content-type': 'application/json'},
+                      'RequestId': 'c187c0c2-54e6-11e7-81e0-b55a4d4d55ab',
+                      'RetryAttempts': 0,
+                      'HTTPStatusCode': 200},
+ 'dialogState': 'Fulfilled',
+ 'intentName': 'list_invoices'}
 
 
 

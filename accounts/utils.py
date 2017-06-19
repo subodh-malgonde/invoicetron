@@ -92,8 +92,8 @@ def build_attachments_for_invoice(invoice):
 
 
 def build_attachments_for_edited_invoice(invoice):
-    edited_attachment = {"title": "Invoice id #%d" % invoice.id, "text": "", "color": "good"}
 
+    edited_attachment = {"title": "Invoice id #%d" % invoice.id, "text": "", "color": "good"}
     edited_attachment["callback_id"] = "invoice_edition:%d" % invoice.id
 
     line_item = invoice.line_items.first()

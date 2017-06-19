@@ -53,6 +53,8 @@ def slack_hook(request):
 
             elif action_type == "invoice_edition":
                 response_message, attachments = LineItem.handle_lineitem_edition(action_id, json_data)
+            elif action_type == "invoice":
+                pass
 
             return JsonResponse({"text": response_message, "attachments": attachments})
 

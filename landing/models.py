@@ -7,11 +7,13 @@ class UserInteractionState(models.Model):
     CHILLING = 'chilling'
     LINE_ITEM_DESCRIPTION_AWAITED = "line_item_description_awaited"
     LINE_ITEM_AMOUNT_AWAITED = "line_item_amount_awaited"
+    LINE_ITEM_FIRST_TIME_DESCRIPTION_AWAITED = "line_item_for_the_first_time"
 
     STATE_CHOICES = (
         (CHILLING, "Chilling"),
         (LINE_ITEM_DESCRIPTION_AWAITED, "Line item description awaited"),
-        (LINE_ITEM_AMOUNT_AWAITED, "Line item amount awaited")
+        (LINE_ITEM_AMOUNT_AWAITED, "Line item amount awaited"),
+        (LINE_ITEM_FIRST_TIME_DESCRIPTION_AWAITED, "Line item description for the first time")
     )
 
     state = models.CharField(max_length=50, default=CHILLING, choices=STATE_CHOICES)

@@ -85,6 +85,8 @@ class LineItem(models.Model):
     description = models.CharField(max_length=200)
     edited_details_awaited_from = models.ForeignKey('accounts.Employee', blank=True, null=True)
 
+    updated_at = models.DateTimeField(auto_now=True)
+
     def __str__(self):
         return "%s-%s-%s"% (str(self.invoice), self.description, self.amount)
 

@@ -1,4 +1,8 @@
 import json
+
+from django.core.urlresolvers import reverse
+
+
 from accounts.models import Customer
 
 
@@ -44,14 +48,13 @@ def build_attachments_for_invoice(invoice):
             "text": "Edit",
             "value": "edit",
             "type": "button",
-            "style": "primary"
         },
         {
             "name": "final_invoice",
             "text": "Cancel",
             "value": "cancel",
             "type": "button",
-            "style": "primary"
+            "style": "danger"
         }
     ]
 
@@ -92,7 +95,6 @@ def build_attachments_for_invoice(invoice):
 
 
 def build_attachments_for_edited_invoice(invoice):
-
     edited_attachment = {"title": "Invoice id #%d" % invoice.id, "text": "", "color": "good"}
     edited_attachment["callback_id"] = "invoice_edition:%d" % invoice.id
 
@@ -131,7 +133,7 @@ def build_attachments_for_edited_invoice(invoice):
             "text": "Finish Editing",
             "value": "finish_editing",
             "type": "button",
-            "style": ""
+            "style": "primary"
         }
 
     ]
@@ -156,31 +158,11 @@ def build_attachments_for_edited_invoice(invoice):
 
 
 def build_attachment_for_confirmed_invoice(invoice):
-
     attachment = {"title": "Invoice #%d" % invoice.id, "text": "", "color": "good"}
 
     attachment["callback_id"] = "invoice:%d" % invoice.id
 
     line_item = invoice.line_items.first()
-
-    actions = [
-        {
-            "name": "created_invoice",
-            "text": "Get Pdf",
-            "value": "create_pdf",
-            "type": "button",
-            "style": "primary"
-        },
-        {
-            "name": "created_invoice",
-            "text": "Send",
-            "value": "send",
-            "type": "button",
-            "style": "primary"
-        }
-    ]
-
-    attachment["actions"] = actions
 
     fields = [
         {
@@ -194,7 +176,7 @@ def build_attachment_for_confirmed_invoice(invoice):
             "short": True
         },
         {
-            "title": "Sent Status",
+            "title": "Delivery Status",
             "value": invoice.sent_status,
             "short": True
         },
@@ -207,6 +189,11 @@ def build_attachment_for_confirmed_invoice(invoice):
             "title": "Amount",
             "value": "$" + str(line_item.amount.amount),
             "short": True
+        },
+        {
+            "title": "Url",
+            "value": reverse('generate_pdf', args=[invoice.id] ),
+            "short": True
         }
 
     ]
@@ -214,3 +201,65 @@ def build_attachment_for_confirmed_invoice(invoice):
     attachment["fields"] = fields
 
     return [attachment]
+
+def build_attachment_for_listing_clients(customer):
+    attachment = {"title": "" , "text": "", "color": "good"}
+
+    fields = [
+        {
+            "title": "Client Name",
+            "value": customer.name,
+            "short": True
+        },
+        {
+            "title": "Email id",
+            "value": customer.email_id,
+            "short": True
+        }
+    ]
+    attachment["fields"] = fields
+
+    return [attachment]
+
+def build_attachment_for_error():
+    attachment = {"title": "", "text": ""}
+
+    fields = [
+        {
+            "title": "Trying to create a invoice?",
+            "value": "Type `create invoice` ",
+            "short": True
+        },
+        {
+            "title": "Trying to create a client?",
+            "value": "Type `create client` ",
+            "short": True
+        },
+        {
+            "title": "Want to view all your invoices?",
+            "value": "Type `list invoices` ",
+            "short": True
+        },
+        {
+            "title": "You can also view your invoices category wise",
+            "value": "Type something like `list paid/sent invoices` ",
+            "short": True
+        }
+    ]
+
+    attachment["fields"] = fields
+
+    return [attachment]
+
+
+def build_message_for_help():
+    message = ":wave: \n" \
+              "Type `create invoice` for creating invoice\n" \
+              "Type `create client` to create client\n" \
+              "Type `list` for viewing all your invoices\n" \
+              "Type `list paid invoices` for viewing invoices categorywise\n" \
+              "You can also type words like `paid` `unpaid` `sent` `not sent` for viewing invoices\n"
+
+    return message
+
+

@@ -63,6 +63,7 @@ class Invoice(models.Model):
             invoice.confirmation_status = True
             invoice.save()
 
+
             attachments = build_attachment_for_confirmed_invoice(invoice)
             response_message = "Your invoice"
 
@@ -82,7 +83,7 @@ class Invoice(models.Model):
 class LineItem(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="line_items")  ##id of invoice from Invoice model
     amount = MoneyField(max_digits=10, decimal_places=2, default_currency='USD')
-    description = models.CharField(max_length=200)
+    description = models.CharField(max_length=200, blank=True, null=True)
     edited_details_awaited_from = models.ForeignKey('accounts.Employee', blank=True, null=True)
 
     updated_at = models.DateTimeField(auto_now=True)
@@ -93,14 +94,14 @@ class LineItem(models.Model):
     @classmethod
     def handle_lineitem_edition(cls,line_item_id, json_data):
 
-        line_item = LineItem.objects.filter(id=line_item_id).first()
+        line_item = LineItem.objects.filter(invoice_id=line_item_id).first()
         attachments = None
 
         if "selected_options" in json_data["actions"][0].keys():
 
             client_id = json_data["actions"][0]["selected_options"][0]["value"]
 
-            response_message = "You have selected %s customer " % client_id
+            response_message = " "
 
             # client = Customer.objects.filter(id =client_id).first()
             # line_item.invoice.client = client

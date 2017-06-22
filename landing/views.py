@@ -17,6 +17,7 @@ import xhtml2pdf.pisa as pisa
 
 from accounts.models import Team, StripeAccountDetails, Employee
 from accounts.utils import build_attachment_for_confirmed_invoice, send_message_to_user
+from invoicetron import settings
 from invoicetron.settings import STRIPE_CLIENT_SECRET_KEY, STRIPE_CONNECT_URL, STRIPE_OAUTH_URL
 
 try:
@@ -25,7 +26,6 @@ try:
 except Exception:
     from io import StringIO, BytesIO
 import cgi
-
 from actions.models import Invoice, LineItem
 
 
@@ -46,10 +46,8 @@ def slack_hook(request):
     if request.method == "POST":
         json_data = json.loads(request.POST['payload'])
 
-
         action_type, action_id = json_data["callback_id"].split(":")
         attachments = None
-        print(action_id)
         if action_type == "invoice":
             response_message = request.build_absolute_uri(reverse('generate_pdf', args=[action_id]))
 
@@ -60,10 +58,7 @@ def slack_hook(request):
             elif action_type == "invoice_edition":
                 response_message, attachments = LineItem.handle_lineitem_edition(action_id, json_data)
 
-
-
         return JsonResponse({"text": response_message, "attachments": attachments})
-
 
     else:
         return HttpResponse("Ok")
@@ -77,10 +72,10 @@ def generate_invoice(request, invoice_id):
         raise Http404("Invoice does not exist")
 
     if request.method == "GET":
-       return render(request, 'application/post_list.html', {'invoice': invoice, 'amount': amount})
+       return render(request, 'application/invoice.html', {'invoice': invoice, 'amount': amount})
     else:
         if 'download' in request.POST:
-            return render_to_pdf('application/post_list.html', {'invoice': invoice})
+            return render_to_pdf('application/invoice.html', {'invoice': invoice})
         else:
             team = invoice.client.team
             line_item = LineItem.objects.filter(invoice=invoice).first()
@@ -113,7 +108,7 @@ def generate_invoice(request, invoice_id):
             message = "Your invoice has been paid"
             send_message_to_user(message, employee, team, attachments )
 
-            return render(request, 'application/post_list.html')
+            return render(request, 'application/invoice.html')
 
 
 def render_to_pdf(template_src, context_dict):
@@ -166,6 +161,31 @@ def stripe_event_hook(request):
 
   # Do something with event_json
     return HttpResponse(status=200)
+
+
+def index(request):
+    client_id = settings.SLACK_CLIENT_ID
+    return render(request, 'application/install.html', {'client_id': client_id})
+
+def slack_oauth(request):
+
+    if request.method == "GET":
+        code = request.GET['code']
+
+        params = {
+            'code': code,
+            'client_id': settings.SLACK_CLIENT_ID,
+            'client_secret': settings.SLACK_CLIENT_SECRET
+        }
+        url = 'https://slack.com/api/oauth.access'
+        json_response = requests.get(url, params)
+        data = json.loads(json_response.text)
+        employee,team = Employee.consume_slack_data(data)
+
+        send_message_to_user(message="Hi. Welcome to Invoicetron", employee=employee, team=team)
+        return render(request, 'application/after_installing.html')
+
+
 
 
 

@@ -38,8 +38,29 @@ class Employee(models.Model):
 
     @classmethod
     def consume_slack_data(self, data, user_data=False, state_user=None):
-        # this method will be called during the oauth process
-        pass
+
+        company, created = Company.objects.get_or_create(name=data['team_id'])
+        user, created = User.objects.get_or_create(username=data['user_id'])
+        print(company)
+        print(user)
+
+        client = SlackClient(data['bot']['bot_access_token'])
+        response = client.api_call('users.info', user=data['user_id'])
+
+
+        employee, created = Employee.objects.get_or_create(user=user, company=company)
+
+        employee.slack_username=response['user']['name']
+        employee.slack_tz_label=response['user']['tz_label']
+        employee.slack_tz=response['user']['tz']
+        employee.save()
+
+
+        team, created = Team.objects.get_or_create(name=data['team_name'], slack_team_id=data['team_id'],
+                                          slack_bot_user_id=data['bot']['bot_user_id'],
+                                          slack_bot_access_token=data['bot']['bot_access_token'],
+                                          owner=employee)
+        return employee,team
 
 
 class Team(models.Model):

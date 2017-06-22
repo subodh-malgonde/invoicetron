@@ -69,3 +69,11 @@ class Customer(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class StripeAccountDetails(models.Model):
+
+    team = models.ForeignKey(Team)
+    stripe_user_id = models.CharField(max_length=100)
+    stripe_publish_key = models.CharField(max_length=100)
+    stripe_access_token = models.CharField(max_length=100)

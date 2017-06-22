@@ -129,3 +129,9 @@ STATICFILES_DIRS = [
 
 SLACK_CLIENT_ID = "YOUR CLIENT ID"
 SLACK_CLIENT_SECRET = "YOUR CLIENT SECRET"
+
+
+CLIENT_ID = 'YOUR_CLIENT_ID'
+STRIPE_CLIENT_SECRET_KEY = 'sk_test_RApZQzKJ1zi0aLiPIMRn6E9Y'
+STRIPE_CONNECT_URL = 'https://connect.stripe.com/oauth/authorize?response_type=code&client_id=ca_As3LPNYpHh1uDPy8C8bn69DTWkIJ9ZTk&scope=read_write'
+STRIPE_OAUTH_URL = 'https://connect.stripe.com/oauth/token'

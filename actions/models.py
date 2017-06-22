@@ -77,9 +77,6 @@ class Invoice(models.Model):
         return response_message, attachments
 
 
-
-
-
 class LineItem(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="line_items")  ##id of invoice from Invoice model
     amount = MoneyField(max_digits=10, decimal_places=2, default_currency='USD')

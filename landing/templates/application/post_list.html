@@ -93,15 +93,21 @@
 
     						</tbody>
     					</table>
-                        <form action="" method="POST">
-                          <script
-                            src="https://checkout.stripe.com/v2/checkout.js" class="stripe-button"
-                            data-key="pk_test_G5YhIkq2PEq84lwU064TZENT"
-                            data-amount={{ amount }}
-                            data-name="InvoiceTron"
-                            data-description="demo">
-                          </script>
-                        </form>
+
+                        {% if invoice.payment_status == 'paid' %}
+                            PAID
+                        {% else %}
+                            <form action="" method="POST">
+                              <script
+                                src="https://checkout.stripe.com/v2/checkout.js" class="stripe-button"
+                                data-key="pk_test_ivY4mBasStCIOGDUaDgaHu2W"
+                                data-amount={{ amount }}
+                                data-name="InvoiceTron"
+                                data-description="demo">
+                              </script>
+                            </form>
+                        {% endif %}
+
     				</div>
     			</div>
 

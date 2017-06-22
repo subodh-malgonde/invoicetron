@@ -1,8 +1,5 @@
 import json
-
 from django.core.urlresolvers import reverse
-
-
 from accounts.models import Customer
 
 
@@ -13,7 +10,6 @@ def open_dm_channel(sc, user_id):
     else:
         print('Error opening DM channel')
         return None
-
 
 def send_message_to_user(message, employee, team, attachments=None, channel_id=None):
     attachment_str = ''
@@ -26,7 +22,6 @@ def send_message_to_user(message, employee, team, attachments=None, channel_id=N
         channel_id = open_dm_channel(client, employee.user.username)
 
     client.api_call('chat.postMessage', channel=channel_id, text=message, attachments=attachment_str)
-
 
 def build_attachments_for_invoice(invoice):
     attachment = {"title": "Invoice #%d" % invoice.id, "text": "", "color": "good"}
@@ -68,12 +63,12 @@ def build_attachments_for_invoice(invoice):
         },
         {
             "title": "Payment Status",
-            "value": invoice.payment_status,
+            "value": invoice.get_payment_status_display(),
             "short": True
         },
         {
             "title": "Sent Status",
-            "value": invoice.sent_status,
+            "value": invoice.get_sent_status_display(),
             "short": True
         },
         {
@@ -92,7 +87,6 @@ def build_attachments_for_invoice(invoice):
     attachment["fields"] = fields
 
     return [attachment]
-
 
 def build_attachments_for_edited_invoice(invoice):
     edited_attachment = {"title": "Invoice id #%d" % invoice.id, "text": "", "color": "good"}
@@ -156,13 +150,25 @@ def build_attachments_for_edited_invoice(invoice):
     edited_attachment["fields"] = fields
     return [edited_attachment]
 
-
 def build_attachment_for_confirmed_invoice(invoice):
     attachment = {"title": "Invoice #%d" % invoice.id, "text": "", "color": "good"}
 
     attachment["callback_id"] = "invoice:%d" % invoice.id
 
     line_item = invoice.line_items.first()
+
+    actions = [
+        {
+            "name": "get_pdf",
+            "text": "Get Pdf",
+            "value": "get_pdf",
+            "type": "button",
+            "style": "primary"
+        }
+    ]
+
+    attachment["actions"] = actions
+
 
     fields = [
         {
@@ -172,27 +178,22 @@ def build_attachment_for_confirmed_invoice(invoice):
         },
         {
             "title": "Payment Status",
-            "value": invoice.payment_status,
+            "value": invoice.get_payment_status_display(),
             "short": True
         },
         {
             "title": "Delivery Status",
-            "value": invoice.sent_status,
+            "value": invoice.get_sent_status_display(),
             "short": True
         },
         {
             "title": "Description",
             "value": line_item.description,
-            "short": False
+            "short": True
         },
         {
             "title": "Amount",
             "value": "$" + str(line_item.amount.amount),
-            "short": True
-        },
-        {
-            "title": "Url",
-            "value": reverse('generate_pdf', args=[invoice.id] ),
             "short": True
         }
 
@@ -251,15 +252,26 @@ def build_attachment_for_error():
 
     return [attachment]
 
-
 def build_message_for_help():
     message = ":wave: \n" \
               "Type `create invoice` for creating invoice\n" \
               "Type `create client` to create client\n" \
               "Type `list` for viewing all your invoices\n" \
               "Type `list paid invoices` for viewing invoices categorywise\n" \
-              "You can also type words like `paid` `unpaid` `sent` `not sent` for viewing invoices\n"
+              "You can also type words like `paid` `unpaid` `sent` `unsent` for viewing invoices\n" \
+              "Type `connect with stripe` in order to connect your stripe account"
 
     return message
+
+def build_attachment_for_connecting_stripe(team):
+
+    attachment = {"title": "Connect with stripe",
+                  "title_link": "https://connect.stripe.com/oauth/authorize?response_type=code&client_id=ca_As3LPNYpHh1uDPy8C8bn69DTWkIJ9ZTk&scope=read_write&state=" + str(team.id),
+                  "text": ""
+                  }
+
+    return [attachment]
+
+
 
 

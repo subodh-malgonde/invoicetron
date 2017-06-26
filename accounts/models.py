@@ -3,11 +3,52 @@ from django.contrib.auth.models import User
 from slackclient import SlackClient
 
 
+
+
 class Company(models.Model):
     name = models.CharField(max_length=200)
+    company_name = models.CharField(max_length=100, blank=True, null=True)
+
+    edited_details_awaited_from_for_company = models.ForeignKey('accounts.Employee', blank=True, null=True, related_name='company_name')
+
 
     def __str__(self):
         return self.name
+
+
+    @classmethod
+    def handle_team_settings(cls, json_data):
+        company = Company.objects.get(name=json_data['team']['id'])
+        selected_value = json_data['actions'][0]['value']
+        attachments = None
+
+        if selected_value == "logo":
+            response_message = 'Upload your company logo here'
+
+        elif selected_value == "name":
+
+            username = json_data['user']['id']
+            employee = Employee.objects.filter(user__username=username).first()
+            from landing.models import UserInteractionState
+            ui_state = UserInteractionState.get_state_for_employee(employee)
+            ui_state.state = UserInteractionState.COMPANY_NAME_AWAITED
+            ui_state.save()
+            company.edited_details_awaited_from_for_company = employee
+            company.save()
+            response_message = 'Enter the name of your company to create invoice on behalf of'
+
+        elif selected_value == "stripe_connect":
+            from accounts.utils import  build_attachment_for_connecting_stripe
+            team = Team.objects.get(slack_team_id=json_data['team']['id'])
+            stripe_account = StripeAccountDetails.objects.get(team=team)
+            if not stripe_account:
+                response_message = 'Click on this link to connect your account with stripe'
+                attachments = build_attachment_for_connecting_stripe(team)
+
+            else:
+                response_message = 'You already have stripe account connected with your team'
+
+        return response_message, attachments
 
 
 # for now we will treat a user's username to be the same as the user_id in slack

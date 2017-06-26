@@ -1,6 +1,5 @@
 import json
-from django.core.urlresolvers import reverse
-from accounts.models import Customer
+from accounts.models import Customer, Company
 
 
 def open_dm_channel(sc, user_id):
@@ -57,7 +56,7 @@ def build_attachments_for_invoice(invoice):
 
     fields = [
         {
-            "title": "Invoice",
+            "title": "Client",
             "value": invoice.client.name,
             "short": False
         },
@@ -160,7 +159,7 @@ def build_attachment_for_confirmed_invoice(invoice):
     actions = [
         {
             "name": "get_pdf",
-            "text": "Get Pdf",
+            "text": "Get Link",
             "value": "get_pdf",
             "type": "button",
             "style": "primary"
@@ -172,7 +171,7 @@ def build_attachment_for_confirmed_invoice(invoice):
 
     fields = [
         {
-            "title": "Invoice",
+            "title": "Client",
             "value": invoice.client.name,
             "short": False
         },
@@ -272,6 +271,50 @@ def build_attachment_for_connecting_stripe(team):
 
     return [attachment]
 
+def build_attachment_for_settings(team):
+    company = Company.objects.get(name=team.slack_team_id)
+    attachment = {"title": "", "text": ""}
+
+    attachment["callback_id"] = "settings:%d" % team.id
+
+    actions = [
+        {
+            "name": "settings",
+            "text": "Logo",
+            "value": "logo",
+            "type": "button",
+            "style": "primary"
+        },
+        {
+            "name": "settings",
+            "text":"Add Company Name" if company is None else "Edit Company Name" ,
+            "value": "name",
+            "type": "button",
+            "style": "primary"
+        },
+
+        {
+            "name": "settings",
+            "text": "Connect Stripe",
+            "value": "stripe_connect",
+            "type": "button",
+            "style": "primary"
+        }
+    ]
+
+    attachment["actions"] = actions
+
+    fields = [
+        {
+            "title": "Company Name",
+            "value": company.company_name,
+            "short": True
+        }
+    ]
+
+    attachment["fields"] = fields
+
+    return [attachment]
 
 
 

@@ -1,9 +1,10 @@
+import re
 from django.contrib.auth.models import User
 
-from accounts.models import Employee, Team, Customer, Company
+from accounts.models import Employee, Team, Customer, Company, StripeAccountDetails
 from accounts.utils import build_attachments_for_edited_invoice, send_message_to_user, build_attachments_for_invoice, \
     build_attachment_for_confirmed_invoice, build_attachment_for_error, build_message_for_help, \
-    build_attachment_for_listing_clients, build_attachment_for_connecting_stripe
+    build_attachment_for_listing_clients, build_attachment_for_connecting_stripe, build_attachment_for_settings
 from landing.models import UserInteractionState
 from actions.models import LineItem, Invoice
 import boto3
@@ -24,7 +25,7 @@ def handle_slack_event(event):
                 if username != bot_user_id:
 
                     team = Team.objects.filter(slack_team_id=event['team']).first()
-                    company = Company.objects.get(name=team.name)
+                    company = Company.objects.get(name=team.slack_team_id)
                     client = SlackClient(team.slack_bot_access_token)
                     employee = Employee.objects.filter(user__username=username).first()
 
@@ -56,20 +57,22 @@ def handle_slack_event(event):
                         print(response)
                         if "intentName" in response:
 
-                            if response['intentName'] == 'connect_stripe':
+                            if response['intentName'] == 'settings':
                                 if response['dialogState'] == 'Fulfilled':
-                                    message = 'Click on this link to connect your account with stripe'
-                                    attachments = build_attachment_for_connecting_stripe(team)
+                                    message = 'Your company settings'
+                                    attachments = build_attachment_for_settings(team)
                                     attachment_str = json.dumps(attachments)
                                     client.api_call('chat.postMessage', channel=event['channel'],
-                                                    text=message, attachments=attachment_str)
+                                                        text=message, attachments=attachment_str)
+
+
 
                             elif response['intentName'] == 'create_invoice':
                                 if response['dialogState'] == 'ElicitSlot':
                                     if response['slots']['ClientName'] != 'None':
                                         amount = response['slots']['Amount']
                                         name_of_client = response['slots']['ClientName']
-                                        invoice_client = Customer.objects.filter(name=name_of_client).first()
+                                        invoice_client = Customer.objects.filter(name__iexact=name_of_client).first()
                                         if not invoice_client:
                                             message = "Client '{}' is not created. Lets create the client first".format(name_of_client)
                                             client.api_call('chat.postMessage', channel=event['channel'],
@@ -90,7 +93,7 @@ def handle_slack_event(event):
                                 if response['dialogState'] == 'Fulfilled':
                                     amount = response['slots']['Amount']
                                     name_of_client = response['slots']['ClientName']
-                                    invoice_client = Customer.objects.filter(name=name_of_client).first()
+                                    invoice_client = Customer.objects.filter(name__iexact=name_of_client).first()
                                     if not invoice_client:
                                         message = "The client name you entered is not created.Lets create the client first"
                                         client.api_call('chat.postMessage', channel=event['channel'],
@@ -136,7 +139,7 @@ def handle_slack_event(event):
                                             inputText='create invoice for {} of total {}'.format(client_name, total_amount)
                                         )
 
-                                        invoice_client = Customer.objects.filter(name=client_name).first()
+                                        invoice_client = Customer.objects.filter(name__iexact=client_name).first()
 
                                         if response2['dialogState'] == 'ElicitSlot':
                                             client.api_call('chat.postMessage', channel=event['channel'],
@@ -223,20 +226,44 @@ def handle_slack_event(event):
                         send_message_to_user(message, employee, team, attachments)
 
                     elif state.state == UserInteractionState.LINE_ITEM_AMOUNT_AWAITED:
+                        new_message = event['text']
+                        if '$' in new_message:
+                            new_message = new_message.replace("$", "")
+                        if not re.match('^[0-9]+$', new_message):
+                            message = "Enter the correct amount"
+                            send_message_to_user(message, employee, team)
+                        else:
+                            line_item = LineItem.objects.filter(edited_details_awaited_from=employee).first()
+                            line_item.amount = new_message
+                            line_item.edited_details_awaited_from = None
 
-                        line_item = LineItem.objects.filter(edited_details_awaited_from=employee).first()
-                        line_item.amount = event['text']
-                        line_item.edited_details_awaited_from = None
+                            line_item.save()
+                            state.state = UserInteractionState.CHILLING
+                            state.save()
 
-                        line_item.save()
+                            invoice = line_item.invoice
+                            message = "Amount has been changed"
+                            attachments = build_attachments_for_edited_invoice(invoice)
+
+                            send_message_to_user(message, employee, team, attachments)
+
+
+                    elif state.state == UserInteractionState.COMPANY_NAME_AWAITED:
+
+                        new_message = event['text']
+                        company = Company.objects.filter(edited_details_awaited_from_for_company=employee).first()
+                        print(company)
+                        company.company_name = new_message
+                        company.edited_details_awaited_from_for_company = None
+                        company.save()
+
                         state.state = UserInteractionState.CHILLING
                         state.save()
 
-                        invoice = line_item.invoice
-                        message = "Amount has been changed"
-                        attachments = build_attachments_for_edited_invoice(invoice)
-
+                        message = "Company name has been added"
+                        attachments = build_attachment_for_settings(team)
                         send_message_to_user(message, employee, team, attachments)
+
 
 
 def create_invoice(invoice_client, employee, amount):
@@ -248,14 +275,14 @@ def create_invoice(invoice_client, employee, amount):
 def list_invoices(employee, event, client, payment_status, sent_status):
 
 
-    invoices = Invoice.objects.filter(author=employee)
+    invoices = Invoice.objects.filter(author=employee).order_by('-created_at')[:5]
 
     if payment_status is not None and sent_status is not None:
-        invoices = invoices.filter(payment_status= payment_status, sent_status = sent_status)[:5]
+        invoices = Invoice.objects.filter(author=employee,payment_status= payment_status, sent_status = sent_status).order_by('-created_at')[:5]
     elif payment_status is not None:
-        invoices = invoices.filter(payment_status= payment_status)[:5]
+        invoices = Invoice.objects.filter(author=employee,payment_status= payment_status).order_by('-created_at')[:5]
     elif sent_status is not None:
-        invoices = invoices.filter(sent_status= sent_status)[:5]
+        invoices = Invoice.objects.filter(author=employee,sent_status= sent_status).order_by('-created_at')[:5]
 
     if not invoices:
         message = "There are no invoices of the given category"

@@ -36,6 +36,7 @@ class Invoice(models.Model):
     sent_status = models.CharField(max_length=10, default=NOT_SENT, choices=SENT_STATUS_CHOICES)
     confirmation_status = models.BooleanField(default=False)
     cancel_status = models.BooleanField(default=False)
+    stripe_charge_id = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
         return "%s - %s - %s" % (str(self.client), self.description, str(self.get_amount()))

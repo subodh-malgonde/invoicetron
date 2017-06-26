@@ -1,7 +1,6 @@
 import json
 from accounts.models import Customer, Company
 
-
 def open_dm_channel(sc, user_id):
     open_channel = sc.api_call('im.open', user=user_id)
     if open_channel['ok']:
@@ -287,7 +286,7 @@ def build_attachment_for_settings(team):
         },
         {
             "name": "settings",
-            "text":"Add Company Name" if company is None else "Edit Company Name" ,
+            "text": "Add Company Name" if company is None  else "Edit Company Name",
             "value": "name",
             "type": "button",
             "style": "primary"

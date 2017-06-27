@@ -1,20 +1,13 @@
-
 import requests
 import stripe
-from django import template
 from django.core.urlresolvers import reverse
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse, Http404
-from django.template import loader
-
 from django.views.decorators.csrf import csrf_exempt
 import json
-from django import http
-from django.shortcuts import render_to_response
-from django.template.loader import get_template
-from django.template import Context
-import xhtml2pdf.pisa as pisa
+from weasyprint import HTML, CSS
 
+from django.template.loader import render_to_string
 from accounts.models import Team, StripeAccountDetails, Employee, Company
 from accounts.utils import build_attachment_for_confirmed_invoice, send_message_to_user
 from invoicetron import settings
@@ -25,11 +18,8 @@ try:
     StringIO = StringIO.StringIO
 except Exception:
     from io import StringIO, BytesIO
-import cgi
 from actions.models import Invoice, LineItem
 
-
-# Create your views here.
 
 @csrf_exempt
 def post_list(request):
@@ -78,7 +68,7 @@ def generate_invoice(request, invoice_id):
        return render(request, 'application/invoice.html', {'invoice': invoice, 'amount': amount})
     else:
         if 'download' in request.POST:
-            return render_to_pdf('application/invoice.html', {'invoice': invoice})
+            return pdf_generation(request, invoice)##render_to_pdf('application/invoice.html', {'invoice': invoice})
         else:
             team = invoice.client.team
             employee = Employee.objects.get(slack_username=invoice.author)
@@ -111,17 +101,17 @@ def generate_invoice(request, invoice_id):
                 send_message_to_user(message, employee, team, attachments)
                 return render(request, 'application/invoice.html',{'invoice': invoice})
 
-def render_to_pdf(template_src, context_dict):
-    template = get_template(template_src)
-    context = Context(context_dict)
-    html  = template.render(context)
-    result = BytesIO()
-    pdf = pisa.pisaDocument(StringIO("{0}".format(html) ), result)
-    if not pdf.err:
+def pdf_generation(request, invoice):
+    context = {'invoice': invoice}
+    html_template ='application/invoice.html'
+    template_string = render_to_string(html_template, context)
+    static_css_file = settings.STATICFILES_DIRS
+    static_css_file = ''.join(static_css_file)
 
-        return http.HttpResponse(result.getvalue(), content_type='application/pdf')
-    return http.HttpResponse('We had some errors<pre>%s</pre>' % cgi.escape(html))
-
+    pdf_file = HTML(string=template_string).write_pdf(stylesheets=[CSS(static_css_file + '/bootstrap.css')])
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = 'filename="Invoice.pdf"'
+    return response
 
 def stripe_oauth(request):
     code = request.GET['code']
@@ -150,12 +140,6 @@ def stripe_oauth(request):
         return render(request, 'application/after_connection.html', {'stripe_account': stripe_account})
 
 
-@csrf_exempt
-def stripe_event_hook(request):
-    return HttpResponse(status=200)
-
-
-
 def index(request):
     client_id = settings.SLACK_CLIENT_ID
     return render(request, 'application/install.html', {'client_id': client_id})
@@ -179,6 +163,18 @@ def slack_oauth(request):
         return render(request, 'application/after_installing.html')
 
 
+
+
+        # def render_to_pdf(template_src, context_dict):
+        #     template = get_template(template_src)
+        #     context = Context(context_dict)
+        #     html  = template.render(context)
+        #     result = BytesIO()
+        #     pdf = pisa.pisaDocument(StringIO(html.decode("utf-8")), result) ##"{0}".format(html)
+        #     if not pdf.err:
+        #
+        #         return http.HttpResponse(result.getvalue(), content_type='application/pdf')
+        #     return http.HttpResponse('We had some errors<pre>%s</pre>' % cgi.escape(html))
 
 # {
 #   "amount": 3000,

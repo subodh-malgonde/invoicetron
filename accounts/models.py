@@ -39,6 +39,7 @@ class Company(models.Model):
 
         elif selected_value == "stripe_connect":
             from accounts.utils import  build_attachment_for_connecting_stripe
+            from accounts.utils import build_attachment_for_settings
             team = Team.objects.get(slack_team_id=json_data['team']['id'])
             stripe_account = StripeAccountDetails.objects.get(team=team)
             if not stripe_account:
@@ -47,6 +48,7 @@ class Company(models.Model):
 
             else:
                 response_message = 'You already have stripe account connected with your team'
+                attachments = build_attachment_for_settings(team)
 
         return response_message, attachments
 

@@ -3,8 +3,6 @@ from django.contrib.auth.models import User
 from slackclient import SlackClient
 
 
-
-
 class Company(models.Model):
     name = models.CharField(max_length=200)
     company_name = models.CharField(max_length=100, blank=True, null=True)
@@ -51,7 +49,6 @@ class Company(models.Model):
                 attachments = build_attachment_for_settings(team)
 
         return response_message, attachments
-
 
 # for now we will treat a user's username to be the same as the user_id in slack
 class Employee(models.Model):

@@ -1,10 +1,9 @@
 import re
 from django.contrib.auth.models import User
-
-from accounts.models import Employee, Team, Customer, Company, StripeAccountDetails
+from accounts.models import Employee, Team, Customer, Company
 from accounts.utils import build_attachments_for_edited_invoice, send_message_to_user, build_attachments_for_invoice, \
     build_attachment_for_confirmed_invoice, build_attachment_for_error, build_message_for_help, \
-    build_attachment_for_listing_clients, build_attachment_for_connecting_stripe, build_attachment_for_settings
+    build_attachment_for_listing_clients, build_attachment_for_settings
 from landing.models import UserInteractionState
 from actions.models import LineItem, Invoice
 import boto3
@@ -64,8 +63,6 @@ def handle_slack_event(event):
                                     attachment_str = json.dumps(attachments)
                                     client.api_call('chat.postMessage', channel=event['channel'],
                                                         text=message, attachments=attachment_str)
-
-
 
                             elif response['intentName'] == 'create_invoice':
                                 if response['dialogState'] == 'ElicitSlot':
@@ -161,17 +158,17 @@ def handle_slack_event(event):
                                 if response['dialogState'] == 'Fulfilled':
 
                                     if response['slots']['Paid'] == None and response['slots']['Sent'] == None:
-                                        list_invoices(employee, event, client, None, None)
+                                        list_invoices(employee, event, None, None)
                                     elif response['slots']['Paid'] is not None and response['slots']['Sent'] == None:
                                         payment_status = response['slots']['Paid']
-                                        list_invoices(employee, event, client, payment_status, None)
+                                        list_invoices(employee, event, payment_status, None)
                                     elif response['slots']['Paid'] == None and response['slots']['Sent'] is not None:
                                         sent_status = response['slots']['Sent']
-                                        list_invoices(employee, event, client, None, sent_status)
+                                        list_invoices(employee, event, None, sent_status)
                                     elif response['slots']['Paid'] is not None and response['slots']['Sent'] is not None:
                                         payment_status = response['slots']['Paid']
                                         sent_status = response['slots']['Sent']
-                                        list_invoices(employee, event, client, payment_status, sent_status)
+                                        list_invoices(employee, event, payment_status, sent_status)
 
                             elif response['intentName'] == 'start':
 
@@ -181,7 +178,7 @@ def handle_slack_event(event):
 
                             elif response['intentName'] == 'list_clients':
                                 if response['dialogState'] == 'Fulfilled':
-                                    list_clients(event, client, team)
+                                    list_clients(event, employee, team)
 
                         else:
                             message = " :x: I am afraid I did not understand. Please type `help` to know more about me.\n" \
@@ -247,7 +244,6 @@ def handle_slack_event(event):
 
                             send_message_to_user(message, employee, team, attachments)
 
-
                     elif state.state == UserInteractionState.COMPANY_NAME_AWAITED:
 
                         new_message = event['text']
@@ -264,18 +260,17 @@ def handle_slack_event(event):
                         attachments = build_attachment_for_settings(team)
                         send_message_to_user(message, employee, team, attachments)
 
-
-
 def create_invoice(invoice_client, employee, amount):
     invoice = Invoice.objects.create(client=invoice_client,author=employee)
     line_item = LineItem.objects.create(invoice=invoice, amount=amount)
     line_item.edited_details_awaited_from = employee
     line_item.save()
 
-def list_invoices(employee, event, client, payment_status, sent_status):
+def list_invoices(employee, event, payment_status, sent_status):
 
 
     invoices = Invoice.objects.filter(author=employee).order_by('-created_at')[:5]
+    team = Team.objects.filter(slack_team_id=event['team']).first()
 
     if payment_status is not None and sent_status is not None:
         invoices = Invoice.objects.filter(author=employee,payment_status= payment_status, sent_status = sent_status).order_by('-created_at')[:5]
@@ -283,32 +278,33 @@ def list_invoices(employee, event, client, payment_status, sent_status):
         invoices = Invoice.objects.filter(author=employee,payment_status= payment_status).order_by('-created_at')[:5]
     elif sent_status is not None:
         invoices = Invoice.objects.filter(author=employee,sent_status= sent_status).order_by('-created_at')[:5]
+    attachments = []
 
     if not invoices:
         message = "There are no invoices of the given category"
-        client.api_call('chat.postMessage', channel=event['channel'],
-                        text=message)
     else:
         for invoice in invoices:
-            attachments = build_attachment_for_confirmed_invoice(invoice)
-            attachment_str = json.dumps(attachments)
-            client.api_call('chat.postMessage', channel=event['channel'],
-                            text="", attachments=attachment_str)
+            message = 'Here are your latest 5 invoices'
+            attachment = build_attachment_for_confirmed_invoice(invoice)
+            attachments.extend(attachment)
 
-def list_clients(event, client, team):
+    send_message_to_user(message=message,employee=employee, team=team,attachments=attachments,channel_id=event['channel'])
+
+def list_clients(event, employee, team):
 
     customers = Customer.objects.filter(team=team)[:5]
+    attachments = []
     if not customers:
         message = "There are no clients in your team"
-        client.api_call('chat.postMessage', channel=event['channel'],
-                        text=message)
+
     else:
         for customer in customers:
-            attachments = build_attachment_for_listing_clients(customer)
-            attachment_str = json.dumps(attachments)
-            client.api_call('chat.postMessage', channel=event['channel'],
-                            text="Client #%d" % customer.id, attachments=attachment_str)
+            message = 'Here are your 5 clients'
+            attachment = build_attachment_for_listing_clients(customer)
+            attachments.extend(attachment)
 
+    send_message_to_user(message=message, employee=employee, team=team, attachments=attachments,
+                         channel_id=event['channel'])
 
 
 

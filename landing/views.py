@@ -6,13 +6,11 @@ from django.http import JsonResponse, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 import json
 from weasyprint import HTML, CSS
-
 from django.template.loader import render_to_string
 from accounts.models import Team, StripeAccountDetails, Employee, Company
 from accounts.utils import build_attachment_for_confirmed_invoice, send_message_to_user
 from invoicetron import settings
 from invoicetron.settings import STRIPE_CLIENT_SECRET_KEY, STRIPE_CONNECT_URL, STRIPE_OAUTH_URL
-
 try:
     import StringIO
     StringIO = StringIO.StringIO
@@ -59,16 +57,16 @@ def slack_hook(request):
 def generate_invoice(request, invoice_id):
     try:
         invoice = Invoice.objects.get(pk=invoice_id)
-        amount = invoice.get_amount()
+        payment_status = invoice.get_payment_status_display()
     except Invoice.DoesNotExist:
         raise Http404("Invoice does not exist")
 
     if request.method == "GET":
 
-       return render(request, 'application/invoice.html', {'invoice': invoice, 'amount': amount})
+        return render(request, 'application/invoice.html', {'invoice': invoice, 'payment_status' : payment_status })
     else:
         if 'download' in request.POST:
-            return pdf_generation(request, invoice)##render_to_pdf('application/invoice.html', {'invoice': invoice})
+            return pdf_generation(request, invoice, payment_status)##render_to_pdf('application/invoice.html', {'invoice': invoice})
         else:
             team = invoice.client.team
             employee = Employee.objects.get(slack_username=invoice.author)
@@ -101,14 +99,14 @@ def generate_invoice(request, invoice_id):
                 send_message_to_user(message, employee, team, attachments)
                 return render(request, 'application/invoice.html',{'invoice': invoice})
 
-def pdf_generation(request, invoice):
-    context = {'invoice': invoice}
+def pdf_generation(request, invoice, payment_status):
+    context = {'invoice': invoice, 'payment_status': payment_status}
     html_template ='application/invoice.html'
     template_string = render_to_string(html_template, context)
-    static_css_file = settings.STATICFILES_DIRS
-    static_css_file = ''.join(static_css_file)
+    # static_css_file = settings.STATICFILES_DIRS
+    # static_css_file = ''.join(static_css_file)
 
-    pdf_file = HTML(string=template_string).write_pdf(stylesheets=[CSS(static_css_file + '/bootstrap.css')])
+    pdf_file = HTML(string=template_string).write_pdf()##stylesheets=[CSS(static_css_file + '/b.css')]
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = 'filename="Invoice.pdf"'
     return response
@@ -138,7 +136,6 @@ def stripe_oauth(request):
         return render(request, 'application/after_connection.html', {'stripe_account': stripe_account})
     else:
         return render(request, 'application/after_connection.html', {'stripe_account': stripe_account})
-
 
 def index(request):
     client_id = settings.SLACK_CLIENT_ID

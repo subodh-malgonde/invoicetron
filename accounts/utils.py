@@ -314,6 +314,3 @@ def build_attachment_for_settings(team):
     attachment["fields"] = fields
 
     return [attachment]
-
-
-

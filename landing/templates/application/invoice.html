@@ -1,73 +1,164 @@
-
+<!doctype html>
 <html>
-{% load staticfiles %}
-<link rel="stylesheet" href="{% static "bootstrap.css" %}">
+  <head>
+      <meta charset="utf-8">
+      <title>Invoice</title>
 
-{#<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>#}
+      <style>
+      .invoice-box{
+          max-width:800px;
+          margin:auto;
+          padding:30px;
+          border:1px solid #eee;
+          box-shadow:0 0 10px rgba(0, 0, 0, .15);
+          font-size:16px;
+          line-height:24px;
+          font-family:'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+          color:#555;
+      }
+      .invoice-box table{
+          width:100%;
+          line-height:inherit;
+          text-align:left;
+      }
+      .invoice-box table td{
+          padding:5px;
+          vertical-align:top;
+      }
+      .invoice-box table tr td:nth-child(2){
+          text-align:right;
+      }
+      .invoice-box table tr.top table td{
+          padding-bottom:20px;
+      }
+      .invoice-box table tr.top table td.title{
+          font-size:45px;
+          line-height:45px;
+          color:#333;
+      }
+      .invoice-box table tr.information table td{
+          padding-bottom:40px;
+      }
+      .invoice-box table tr.heading td{
+          background:#eee;
+          border-bottom:1px solid #ddd;
+          font-weight:bold;
+      }
+      .invoice-box table tr.details td{
+          padding-bottom:20px;
+      }
+      .invoice-box table tr.item td{
+          border-bottom:1px solid #eee;
+      }
+      .invoice-box table tr.item.last td{
+          border-bottom:none;
+      }
+      .invoice-box table tr.total td:nth-child(2){
+          border-top:2px solid #eee;
+          font-weight:bold;
+      }
+      @media only screen and (max-width: 600px) {
+          .invoice-box table tr.top table td{
+              width:100%;
+              display:block;
+              text-align:center;
+          }
+          .invoice-box table tr.information table td{
+              width:100%;
+              display:block;
+              text-align:center;
+          }
+      }
+      </style>
+  </head>
 
-<style>
+  <body>
+      <div class="invoice-box">
+          <table cellpadding="0" cellspacing="0">
+              <tr class="top">
+                  <td colspan="2">
+                      <table>
+                          <tr>
+                              <td class="title">
+                                 {{ invoice.author.company.company_name }} {# <img src="file://{{imageDirectory}}/datboi-25pc.png" >#}
+                              </td>
 
-    .invoice-title h2, .invoice-title h3 {
-    display: inline-block;
-}
+                              <td>
+                                  Invoice #{{ invoice.id }}<br>
+                                  Date: {{ invoice.created_at.date }}<br>
+                              </td>
+                          </tr>
+                      </table>
+                  </td>
+              </tr>
 
-.table > tbody > tr > .no-line {
-    border-top: none;
-}
+              <tr class="information">
+                  <td colspan="2">
+                      <table>
+                          <tr>
+                              <td>
+                                  {{ invoice.author.company.company_name }}<br>
+                                  Created by:<br>
+                                  {{ invoice.author }}<br>
 
-.table > thead > tr > .no-line {
-    border-bottom: none;
-}
+                              </td>
 
-.table > tbody > tr > .thick-line {
-    border-top: 2px solid;
-}
-</style>
-<body>
+                              <td>
+                                  {{ invoice.client.name }}<br>
+                                  {{ invoice.client.email_id }}<br>
 
-<div class="container">
-    <div class="row">
-        <div class="col-md-8 col-md-offset-2">
-    		<div class="invoice-title">
-                <h2 class="">Invoice order # {{ invoice.id }}</h2>
-                <h3 class="pull-right">
-                <form action="" method="post">
-                    {% csrf_token %}
+                              </td>
+                          </tr>
+                      </table>
+                  </td>
+              </tr>
 
-                        <input type="submit" value="Download as pdf" name="download">
-                </form>
-                </h3>
-    		</div>
-    		<hr>
-    		<div class="row">
-    			<div class="col-xs-6">
-    				<address>
-    				<strong>Billed To:</strong><br>
-    					{{ invoice.client }}<br>
-    					<br><br>
-    				</address>
-    			</div>
-                <div class="col-xs-6 text-right">
-    				<address>
-    				<strong>Created by:</strong><br>
-    					{{ invoice.author.company.company_name }}<br>
-    					<br><br>
-    				</address>
-    			</div>
-            </div>
+              <tr class="heading">
+                  <td>
+                      Payment Status
+                  </td>
+                  <td></td>
+              </tr>
 
-    		<div class="row">
-                <div class="col-xs-6">
-    				<address>
-    					<strong>Invoice created on:</strong><br>
-    					{{ invoice.created_at.date }}<br><br>
-    				</address>
-    			</div>
-                <div class="col-xs-6 text-right">
-    				<address>
-    				<strong>Payment Status</strong><br>
-    					{{ invoice.payment_status }}<br>
-                        {% if invoice.payment_status == 'paid' %}
+              <tr class="details">
+                  <td>
+                      {{ payment_status }}
+
+                  </td>
+
+              </tr>
+
+
+              <tr class="heading">
+                  <td>
+                     Description
+                  </td>
+
+                  <td>
+                      Amount
+                  </td>
+              </tr>
+
+              <tr class="item">
+                  <td>
+                      {{ invoice.description }}
+                  </td>
+
+                  <td>
+                      {{ invoice.get_amount }}
+                  </td>
+              </tr>
+
+              <tr class="total">
+                  <td></td>
+
+                  <td>
+                     Total: {{ invoice.get_amount }}
+                  </td>
+              </tr>
+              <tr>
+                <td>
+                  {% if invoice.payment_status == 'paid' %}
 
                         {% else %}
                             <form action="" method="POST">
@@ -80,60 +171,16 @@
                               </script>
                             </form>
                         {% endif %}
+                </td>
+                  <td>
+                  <form action="" method="post">
+                    {% csrf_token %}
 
-    					<br>
-    				</address>
-    			</div>
-    		</div>
-    	</div>
-    </div>
-
-    <div class="row">
-    	<div class="col-md-8 col-md-offset-2">
-    		<div class="panel panel-default">
-    			<div class="panel-heading">
-    				<h3 class="panel-title"><strong>Order summary</strong></h3>
-    			</div>
-    			<div class="panel-body">
-    				<div class="table-responsive">
-    					<table class="table table-condensed">
-    						<thead>
-                                <tr>
-        							<td><strong>Description</strong></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td class="text-right"><strong>Amount</strong></td>
-                                </tr>
-    						</thead>
-    						<tbody>
-    							<!-- foreach ($order->lineItems as $line) or some such thing here -->
-    							<tr>
-    								<td>{{ invoice.description }}</td>
-                                    <td></td>
-                                    <td></td>
-                                    <td class="text-right">{{ invoice.get_amount }}</td>
-    							</tr>
-                                <tr>
-    								<td class="thick-line"></td>
-    								<td class="thick-line"></td>
-    								<td class="thick-line text-center"><strong>Total</strong></td>
-    								<td class="thick-line text-right">{{ invoice.get_amount }}</td>
-    							</tr>
-
-    						</tbody>
-    					</table>
-
-
-
-    				</div>
-    			</div>
-
-    		</div>
-    	</div>
-
-    </div>
-
-</div>
-
-</body>
+                        <input type="submit" value="Generate PDF" name="download">
+                  </form>
+                  </td>
+              </tr>
+          </table>
+      </div>
+  </body>
 </html>

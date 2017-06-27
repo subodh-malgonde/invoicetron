@@ -1,6 +1,5 @@
 from django.db import models
 from djmoney.models.fields import MoneyField
-
 from accounts.models import Employee, Customer
 from landing.models import UserInteractionState
 from accounts.utils import build_attachments_for_invoice, build_attachments_for_edited_invoice, \

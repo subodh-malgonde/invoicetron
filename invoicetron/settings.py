@@ -127,6 +127,8 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
 
+STATIC_ROOT = os.path.join(BASE_DIR, "static_root")
+
 SLACK_CLIENT_ID = "191162354406.190365736048"
 SLACK_CLIENT_SECRET = "4703964e5297f91e3ede82a7a1ba2c8d"
 

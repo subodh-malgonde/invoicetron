@@ -252,7 +252,7 @@ def build_attachment_for_error():
 
 def build_message_for_help():
     message = ":wave: \n" \
-              "You can also type `create invoice` and follow the bot\n" \
+              "You can type `create invoice` and follow the bot\n" \
               "Type `create client 'ClientName' ` to create client\n" \
               "Type `list invoices` for viewing all your invoices\n" \
               "Type `list clients` or `my clients` for viewing invoices categorywise\n" \

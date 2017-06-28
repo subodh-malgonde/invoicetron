@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_rq',
     'accounts',
     'landing',
     'actions',
@@ -137,3 +138,20 @@ STRIPE_CLIENT_ID = 'ca_As3LPNYpHh1uDPy8C8bn69DTWkIJ9ZTk'
 STRIPE_CLIENT_SECRET_KEY = 'sk_test_RApZQzKJ1zi0aLiPIMRn6E9Y'
 STRIPE_CONNECT_URL = 'https://connect.stripe.com/oauth/authorize?response_type=code&client_id=ca_As3LPNYpHh1uDPy8C8bn69DTWkIJ9ZTk&scope=read_write'
 STRIPE_OAUTH_URL = 'https://connect.stripe.com/oauth/token'
+
+
+RQ_QUEUES = {
+    'default': {
+        'URL': os.getenv('REDISTOGO_URL', 'redis://localhost:6379/0'),
+        'DEFAULT_TIMEOUT': 500,
+    },
+    'high': {
+        'URL': os.getenv('REDISTOGO_URL', 'redis://localhost:6379/0'),
+        'DEFAULT_TIMEOUT': 500,
+    },
+    'low': {
+        'URL': os.getenv('REDISTOGO_URL', 'redis://localhost:6379/0'),
+        'DEFAULT_TIMEOUT': 500,
+    }
+}
+

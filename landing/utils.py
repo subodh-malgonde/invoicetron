@@ -69,7 +69,7 @@ def handle_slack_event(event):
 
                                 amount = response['slots']['Amount']
                                 name_of_client = response['slots']['ClientName']
-                                invoice_client = Customer.objects.filter(name__iexact=name_of_client).first()
+                                invoice_client = Customer.objects.filter(name__icontains=name_of_client).first()
                                 if not invoice_client:
                                     message = "Client '{}' is not created. Lets create the client first".format(
                                         name_of_client)
@@ -94,7 +94,7 @@ def handle_slack_event(event):
                         elif response['dialogState'] == 'Fulfilled':
                             amount = response['slots']['Amount']
                             name_of_client = response['slots']['ClientName']
-                            invoice_client = Customer.objects.filter(name__iexact=name_of_client).first()
+                            invoice_client = Customer.objects.filter(name__icontains=name_of_client).first()
                             if not invoice_client:
                                 message = "The client name you entered is not created.Lets create the client first"
                                 client.api_call('chat.postMessage', channel=event['channel'],
@@ -140,7 +140,7 @@ def handle_slack_event(event):
                                     inputText='create invoice for {} of total {}'.format(client_name, total_amount)
                                 )
 
-                                invoice_client = Customer.objects.filter(name__iexact=client_name).first()
+                                invoice_client = Customer.objects.filter(name__icontains=client_name).first()
 
                                 if response2['dialogState'] == 'ElicitSlot':
                                     client.api_call('chat.postMessage', channel=event['channel'],

@@ -8,7 +8,6 @@ urlpatterns = [
     url(r'^connected/$', views.stripe_oauth, name='connect_with_stripe'),
     url(r'^invoicetron/$', views.index, name='Add New Team'),
     url(r'^slack/oauth/$', views.slack_oauth, name='Slack Oauth')
-    ##url(r'^stripe/webhook/$', views.stripe_event_hook, name='Stripe Webhook')
 ]
 
 

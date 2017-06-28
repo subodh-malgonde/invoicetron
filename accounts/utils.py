@@ -252,12 +252,13 @@ def build_attachment_for_error():
 
 def build_message_for_help():
     message = ":wave: \n" \
-              "Type `create invoice` for creating invoice\n" \
-              "Type `create client` to create client\n" \
-              "Type `list` for viewing all your invoices\n" \
-              "Type `list paid invoices` for viewing invoices categorywise\n" \
-              "You can also type words like `paid` `unpaid` `sent` `unsent` for viewing invoices\n" \
-              "Type `connect with stripe` in order to connect your stripe account"
+              "You can also type `create invoice` and follow the bot\n" \
+              "Type `create client 'ClientName' ` to create client\n" \
+              "Type `list invoices` for viewing all your invoices\n" \
+              "Type `list clients` or `my clients` for viewing invoices categorywise\n" \
+              "You can also type words like list `paid` or `unpaid` invoices \n" \
+              "Type `settings` in order to add your company name, logo and to connect with your stripe account\n" \
+              "Type `help` `hi` `hello` to see me again"
 
     return message
 

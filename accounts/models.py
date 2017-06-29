@@ -50,8 +50,8 @@ class Company(models.Model):
             team = Team.objects.get(slack_team_id=json_data['team']['id'])
             stripe_account = StripeAccountDetails.objects.filter(team=team).first()
             if not stripe_account:
-                response_message = 'Please head to  <https://connect.stripe.com/oauth/authorize?response_type=code&client_id=ca_As3LPNYpHh1uDPy8C8bn69DTWkIJ9ZTk&scope=read_write&state=%s >' \
-                                   'to connect your stripe account with InvoiceTron ' % str(team.id)
+                response_message = 'Please <https://connect.stripe.com/oauth/authorize?response_type=code&client_id=ca_As3LPNYpHh1uDPy8C8bn69DTWkIJ9ZTk&scope=read_write&state=%s|Click Here>' \
+                                   ' to connect your stripe account with InvoiceTron ' % str(team.id)
 
 
             else:
@@ -201,7 +201,7 @@ class Customer(models.Model):
 
         elif selected_value == 'finish_editing':
             response_message = "Your client has been edited."
-            attachments = build_attachment_for_listing_clients(customer)
+            attachments = build_attachment_for_listing_clients(customer, add_more=False)
 
         return response_message,attachments
 

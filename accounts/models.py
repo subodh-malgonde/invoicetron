@@ -1,3 +1,4 @@
+import django_rq
 from django.db import models
 from django.contrib.auth.models import User
 from slackclient import SlackClient
@@ -6,7 +7,7 @@ from slackclient import SlackClient
 class Company(models.Model):
     name = models.CharField(max_length=200)
     company_name = models.CharField(max_length=100, blank=True, null=True)
-
+    company_logo = models.ImageField(upload_to='', blank=True, null=True)
     edited_details_awaited_from_for_company = models.ForeignKey('accounts.Employee', blank=True, null=True, related_name='company_name')
 
 
@@ -21,7 +22,14 @@ class Company(models.Model):
         attachments = None
 
         if selected_value == "logo":
-            response_message = 'Upload your company logo here'
+            company_logo = company.company_logo
+            if company_logo is None:
+                response_message = 'You have not uploaded your company logo yet. \n' \
+                                   'Drag/drop a file. Supported file formats are jpeg/png'
+
+            else:
+                response_message = 'Here is your company logo'
+
 
         elif selected_value == "name":
 
@@ -33,16 +41,18 @@ class Company(models.Model):
             ui_state.save()
             company.edited_details_awaited_from_for_company = employee
             company.save()
-            response_message = 'Enter the name of your company to create invoice on behalf of'
+            response_message = 'Please enter your legal/company name. \n' \
+                               'This name will be used to raise invoices'
 
         elif selected_value == "stripe_connect":
-            from accounts.utils import  build_attachment_for_connecting_stripe
+
             from accounts.utils import build_attachment_for_settings
             team = Team.objects.get(slack_team_id=json_data['team']['id'])
-            stripe_account = StripeAccountDetails.objects.get(team=team)
+            stripe_account = StripeAccountDetails.objects.filter(team=team).first()
             if not stripe_account:
-                response_message = 'Click on this link to connect your account with stripe'
-                attachments = build_attachment_for_connecting_stripe(team)
+                response_message = 'Please head to  <https://connect.stripe.com/oauth/authorize?response_type=code&client_id=ca_As3LPNYpHh1uDPy8C8bn69DTWkIJ9ZTk&scope=read_write&state=%s >' \
+                                   'to connect your stripe account with InvoiceTron ' % str(team.id)
+
 
             else:
                 response_message = 'You already have stripe account connected with your team'
@@ -126,10 +136,96 @@ class Customer(models.Model):
     name = models.CharField(max_length=100)
     email_id = models.EmailField(max_length=100)
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
-    created_by = models.ForeignKey(Employee)
+    created_by = models.ForeignKey(Employee, related_name='created_customers')
+    edited_details_awaited_from = models.ForeignKey(Employee, blank=True, null=True)
+
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def handle_client_create(cls,client_id, json_data):
+        from accounts.utils import build_attachment_for_editing_client
+        customer = Customer.objects.filter(id=client_id).first()
+        selected_value = json_data['actions'][0]['value']
+        username = json_data['user']['id']
+        channel_id = json_data['channel']['id']
+        attachments = None
+        response_message = ''
+        if selected_value == 'invoice':
+            response_message = 'Please wait. Your invoice is being created for %s ' % customer.name
+            queue = django_rq.get_queue('high')
+            queue.enqueue('landing.utils.call_lex_for_creating_invoice', customer=customer, username=username, channel_id=channel_id, json_data=json_data)
+
+        elif selected_value == 'edit':
+            response_message = ''
+            attachments = build_attachment_for_editing_client(customer)
+
+        elif selected_value == 'add_more':
+            response_message = 'Lets add a new client.'
+            queue = django_rq.get_queue('high')
+            queue.enqueue('landing.utils.call_lex_for_creating_client', username=username, json_data=json_data, channel_id=channel_id )
+
+        elif selected_value == 'later':
+            response_message = 'OK'
+
+        return response_message, attachments
+
+    @classmethod
+    def handle_client_edit(cls,client_id,json_data):
+        from landing.models import UserInteractionState
+        from accounts.utils import build_attachment_for_listing_clients
+        customer = Customer.objects.filter(id=client_id).first()
+        selected_value = json_data['actions'][0]['value']
+        attachments = None
+        username = json_data['user']['id']
+        if selected_value == 'edit_name':
+            employee = Employee.objects.filter(user__username=username).first()
+            ui_state = UserInteractionState.get_state_for_employee(employee)
+            ui_state.state = UserInteractionState.CLIENT_NAME_AWAITED
+            ui_state.save()
+            customer.edited_details_awaited_from = employee
+            customer.save()
+
+            response_message = "Please enter the new name"
+
+        elif selected_value == 'edit_email':
+            employee = Employee.objects.filter(user__username=username).first()
+            ui_state = UserInteractionState.get_state_for_employee(employee)
+            ui_state.state = UserInteractionState.CLIENT_EMAIL_AWAITED
+            ui_state.save()
+            customer.edited_details_awaited_from = employee
+            customer.save()
+
+            response_message = "Please enter the new email"
+
+        elif selected_value == 'finish_editing':
+            response_message = "Your client has been edited."
+            attachments = build_attachment_for_listing_clients(customer)
+
+        return response_message,attachments
+
+    @classmethod
+    def handle_client_list(cls,page_number, json_data):
+        from landing.utils import list_clients
+        selected_value = json_data['actions'][0]['value']
+        username = json_data['user']['id']
+        channel_id = json_data['channel']['id']
+        employee = Employee.objects.filter(user__username=username).first()
+        team = Team.objects.filter(slack_team_id = json_data['team']['id']).first()
+        if selected_value == 'view_more':
+            response_message = ''
+            page_number = int(page_number)
+            page_number += 1
+            list_clients(employee, team, page_number)
+
+        elif selected_value == 'add_new':
+            response_message = 'Lets add a new client.'
+            queue = django_rq.get_queue('high')
+            queue.enqueue('landing.utils.call_lex_for_creating_client', username=username, json_data=json_data,
+                          channel_id=channel_id)
+
+        return response_message
 
 
 class StripeAccountDetails(models.Model):

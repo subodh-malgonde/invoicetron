@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from weasyprint import HTML, CSS
 from django.template.loader import render_to_string
-from accounts.models import Team, StripeAccountDetails, Employee, Company
+from accounts.models import Team, StripeAccountDetails, Employee, Company, Customer
 from accounts.utils import build_attachment_for_confirmed_invoice, send_message_to_user
 from invoicetron import settings
 from invoicetron.settings import STRIPE_CLIENT_SECRET_KEY, STRIPE_CONNECT_URL, STRIPE_OAUTH_URL
@@ -47,6 +47,21 @@ def slack_hook(request):
 
         elif action_type == "invoice_edition":
             response_message, attachments = LineItem.handle_lineitem_edition(action_id, json_data)
+
+        elif action_type == "client_create":
+            response_message, attachments = Customer.handle_client_create(action_id, json_data)
+
+        elif action_type == "client_edit":
+            response_message,attachments = Customer.handle_client_edit(action_id,json_data)
+
+        elif action_type == "invoice_dropdown":
+            response_message = Invoice.handle_new_invoice(json_data)
+
+        elif action_type == "client_list":
+            response_message = Customer.handle_client_list(action_id, json_data)
+
+        elif action_type == "invoice_list":
+            response_message = Invoice.handle_invoice_list(action_id, json_data)
 
         return JsonResponse({"text": response_message, "attachments": attachments})
 
@@ -127,15 +142,14 @@ def stripe_oauth(request):
     stripe_access_token = response.json().get('access_token')
     stripe_user_id = response.json().get('stripe_user_id')
     stripe_publish_key = response.json().get('stripe_publishable_key')
-    stripe_account = StripeAccountDetails.objects.filter(stripe_user_id=stripe_user_id).first()
-    if stripe_account is None:
-        StripeAccountDetails.objects.create(team=team, stripe_access_token=stripe_access_token,
-                                            stripe_user_id=stripe_user_id,
-                                            stripe_publish_key=stripe_publish_key)
-        send_message_to_user(message='Hurray.Your account has been connected', employee=employee, team=team)
-        return render(request, 'application/after_connection.html', {'stripe_account': stripe_account})
-    else:
-        return render(request, 'application/after_connection.html', {'stripe_account': stripe_account})
+    # stripe_account = StripeAccountDetails.objects.filter(stripe_user_id=stripe_user_id).first()
+    StripeAccountDetails.objects.create(team=team, stripe_access_token=stripe_access_token,
+                                        stripe_user_id=stripe_user_id,
+                                        stripe_publish_key=stripe_publish_key)
+    send_message_to_user(message='Your stripe account was successfully connected.\n'
+                                     'Type `create invoices` to start invoicing or clients', employee=employee, team=team)
+    return render(request, 'application/after_connection.html')
+
 
 def index(request):
     client_id = settings.SLACK_CLIENT_ID
@@ -144,7 +158,10 @@ def index(request):
 def slack_oauth(request):
 
     if request.method == "GET":
-        code = request.GET['code']
+        code = request.GET.get('code', None)
+
+        if not code:
+            return HttpResponse("Invalid request", status=403)
 
         params = {
             'code': code,

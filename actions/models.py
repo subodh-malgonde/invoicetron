@@ -1,3 +1,4 @@
+import django_rq
 from django.db import models
 from djmoney.models.fields import MoneyField
 from accounts.models import Employee, Customer
@@ -75,6 +76,47 @@ class Invoice(models.Model):
             response_message = "Your invoice has been deleted"
 
         return response_message, attachments
+
+    @classmethod
+    def handle_new_invoice(cls, json_data):
+
+
+        if "selected_options" in json_data["actions"][0].keys():
+
+            client_id = json_data["actions"][0]["selected_options"][0]["value"]
+            customer = Customer.objects.filter(id=client_id).first()
+            username = json_data['user']['id']
+            channel_id = json_data['channel']['id']
+            queue = django_rq.get_queue('high')
+            queue.enqueue('landing.utils.call_lex_for_creating_invoice', customer=customer, username=username,
+                          channel_id=channel_id, json_data=json_data)
+
+            response_message = "Please wait your invoice is being created. "
+
+        return response_message
+
+    @classmethod
+    def handle_invoice_list(cls, page_number, json_data):
+        from landing.utils import list_invoices
+        from accounts.models import Team
+        selected_value = json_data['actions'][0]['value']
+        username = json_data['user']['id']
+        channel_id = json_data['channel']['id']
+        employee = Employee.objects.filter(user__username=username).first()
+        team = Team.objects.filter(slack_team_id=json_data['team']['id']).first()
+        if selected_value == 'view_more':
+            response_message = ''
+            page_number = int(page_number)
+            page_number += 1
+            list_invoices(employee, team,page_number, payment_status=None,sent_status=None)
+
+        elif selected_value == 'add_new':
+            response_message = 'Lets add a new invoice.'
+            queue = django_rq.get_queue('high')
+            queue.enqueue('landing.utils.call_lex_for_creating_invoice', username=username, json_data=json_data,
+                          channel_id=channel_id)
+
+        return response_message
 
 
 class LineItem(models.Model):

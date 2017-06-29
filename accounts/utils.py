@@ -57,6 +57,16 @@ def build_attachments_for_invoice(invoice):
         {
             "title": "Client",
             "value": invoice.client.name,
+            "short": True
+        },
+        {
+            "title": "Amount",
+            "value": "$" + str(line_item.amount.amount),
+            "short": True
+        },
+        {
+            "title": "Description",
+            "value": line_item.description,
             "short": False
         },
         {
@@ -67,16 +77,6 @@ def build_attachments_for_invoice(invoice):
         {
             "title": "Sent Status",
             "value": invoice.get_sent_status_display(),
-            "short": True
-        },
-        {
-            "title": "Description",
-            "value": line_item.description,
-            "short": False
-        },
-        {
-            "title": "Amount",
-            "value": "$" + str(line_item.amount.amount),
             "short": True
         }
 
@@ -201,8 +201,10 @@ def build_attachment_for_confirmed_invoice(invoice):
 
     return [attachment]
 
-def build_attachment_for_listing_clients(customer):
+def build_attachment_for_listing_clients(customer, add_more):
     attachment = {"title": "" , "text": "", "color": "good"}
+
+    attachment["callback_id"] = "client_create:%d" % customer.id
 
     fields = [
         {
@@ -216,7 +218,94 @@ def build_attachment_for_listing_clients(customer):
             "short": True
         }
     ]
+    if add_more == True:
+        actions = [
+            {
+                "name": "create_client",
+                "text": "Invoice",
+                "value": "invoice",
+                "type": "button",
+                "style": "primary"
+            },
+            {
+                "name": "create_client",
+                "text": "Edit",
+                "value": "edit",
+                "type": "button",
+            },
+            {
+                "name": "create_client",
+                "text": "Add More",
+                "value": "add_more",
+                "type": "button"
+            }
+        ]
+
+    else:
+        actions = [
+            {
+                "name": "create_client",
+                "text": "Invoice",
+                "value": "invoice",
+                "type": "button",
+                "style": "primary"
+            },
+            {
+                "name": "create_client",
+                "text": "Edit",
+                "value": "edit",
+                "type": "button",
+            }
+        ]
+
+
+
     attachment["fields"] = fields
+    attachment["actions"] = actions
+
+
+    return [attachment]
+
+def build_attachment_for_editing_client(customer):
+    attachment = {"title": "", "text": "", "color": "good"}
+
+    attachment["callback_id"] = "client_edit:%d" % customer.id
+
+    fields = [
+        {
+            "title": "Client Name",
+            "value": customer.name,
+            "short": True
+        },
+        {
+            "title": "Email id",
+            "value": customer.email_id,
+            "short": True
+        }
+    ]
+    actions = [
+        {
+            "name": "edit_client",
+            "text": "Edit Name",
+            "value": "edit_name",
+            "type": "button"
+        },
+        {
+            "name": "edit_client",
+            "text": "Edit Email",
+            "value": "edit_email",
+            "type": "button",
+        },
+        {
+            "name": "edit_client",
+            "text": "Finish Editing",
+            "value": "finish_editing",
+            "type": "button"
+        }
+    ]
+
+    attachment["fields"] = fields
+    attachment["actions"] = actions
 
     return [attachment]
 
@@ -251,25 +340,13 @@ def build_attachment_for_error():
     return [attachment]
 
 def build_message_for_help():
-    message = ":wave: \n" \
-              "You can type `create invoice` and follow the bot\n" \
-              "Type `create client 'ClientName' ` to create client\n" \
-              "Type `list invoices` for viewing all your invoices\n" \
-              "Type `list clients` or `my clients` for viewing invoices categorywise\n" \
-              "You can also type words like list `paid` or `unpaid` invoices \n" \
-              "Type `settings` in order to add your company name, logo and to connect with your stripe account\n" \
-              "Type `help` `hi` `hello` to see me again"
+    message = "Hi :wave: I am InvoiceTron. I can help you invoice your clients. \n" \
+              "Type `create invoice` to create and send invoices\n" \
+              "Type `create client` to create a new client \n" \
+              "Type `invoices` to view your invoices and  `clients` to view your clients \n" \
+              "Type `settings` to manage your account \n"
 
     return message
-
-def build_attachment_for_connecting_stripe(team):
-
-    attachment = {"title": "Connect with stripe",
-                  "title_link": "https://connect.stripe.com/oauth/authorize?response_type=code&client_id=ca_As3LPNYpHh1uDPy8C8bn69DTWkIJ9ZTk&scope=read_write&state=" + str(team.id),
-                  "text": ""
-                  }
-
-    return [attachment]
 
 def build_attachment_for_settings(team):
     company = Company.objects.get(name=team.slack_team_id)
@@ -280,25 +357,22 @@ def build_attachment_for_settings(team):
     actions = [
         {
             "name": "settings",
-            "text": "Logo",
+            "text": "Add logo",
             "value": "logo",
-            "type": "button",
-            "style": "primary"
+            "type": "button"
         },
         {
             "name": "settings",
-            "text": "Add Company Name" if company is None  else "Edit Company Name",
+            "text": "Add Legal Name",
             "value": "name",
-            "type": "button",
-            "style": "primary"
+            "type": "button"
         },
 
         {
             "name": "settings",
             "text": "Connect Stripe",
             "value": "stripe_connect",
-            "type": "button",
-            "style": "primary"
+            "type": "button"
         }
     ]
 
@@ -315,3 +389,165 @@ def build_attachment_for_settings(team):
     attachment["fields"] = fields
 
     return [attachment]
+
+def build_attachment_for_edited_settings(team):
+    company = Company.objects.get(name=team.slack_team_id)
+    attachment = {"title": "", "text": ""}
+
+    attachment["callback_id"] = "settings:%d" % team.id
+
+    actions = [
+        {
+            "name": "settings",
+            "text": "Edit Logo",
+            "value": "logo",
+            "type": "button"
+        },
+        {
+            "name": "settings",
+            "text": "Edit Legal Name",
+            "value": "name",
+            "type": "button"
+        },
+
+        {
+            "name": "settings",
+            "text": "Connect Stripe",
+            "value": "stripe_connect",
+            "type": "button"
+        }
+    ]
+
+    attachment["actions"] = actions
+
+    fields = [
+        {
+            "title": "Company Name",
+            "value": company.company_name,
+            "short": True
+        },
+        {
+            "title": "Company Logo",
+            "value": "logo",
+            "short": True
+        }
+    ]
+
+    attachment["fields"] = fields
+
+    return [attachment]
+
+def build_attachment_for_no_clients():
+    attachment = {"title": "", "text": "", "color": "good"}
+
+    attachment["callback_id"] = "client_create:0"
+
+    actions = [
+        {
+            "name": "create_client",
+            "text": "Yes",
+            "value": "add_more",
+            "type": "button",
+            "style": "primary"
+        },
+        {
+            "name": "create_client",
+            "text": "May be Later",
+            "value": "later",
+            "type": "button",
+        }
+    ]
+
+    attachment['actions'] = actions
+
+    return [attachment]
+
+def build_attachment_for_new_invoice():
+    attachment = {"title": 'Please select a client from list below', "text": "", "color": "good"}
+
+    attachment["callback_id"] = "invoice_dropdown: "
+
+    actions = [
+        {
+            "name": "Customer name",
+            "text": "Choose a customer",
+            "type": "select",
+            "options": [{"text": customer.name, "value": str(customer.id)} for customer in Customer.objects.all()]
+        }
+    ]
+
+    attachment['actions'] = actions
+
+    return [attachment]
+
+def build_attachment_for_pagination_for_invoices(view_more,page):
+    attachment = {"title": "", "text": "", "color": "good"}
+
+    attachment["callback_id"] = "invoice_list:%d" % int(page)
+    if view_more == True:
+
+        actions = [
+            {
+                "name": "page",
+                "text": "View More",
+                "value": "view_more",
+                "type": "button"
+            },
+            {
+                "name": "page",
+                "text": "Add New",
+                "value": "add_new",
+                "type": "button"
+            }
+        ]
+
+    else:
+        actions = [
+            {
+                "name": "page",
+                "text": "Add New",
+                "value": "add_new",
+                "type": "button"
+            }
+        ]
+
+    attachment['actions'] = actions
+    return [attachment]
+
+def build_attachment_for_pagination_for_clients(view_more, page):
+
+    attachment = {"title": "", "text": "", "color": "good"}
+
+    attachment["callback_id"] = "client_list:%d" % int(page)
+    if view_more == True:
+
+        actions = [
+            {
+                "name": "page",
+                "text": "View More",
+                "value": "view_more",
+                "type": "button"
+            },
+            {
+                "name": "page",
+                "text": "Add New",
+                "value": "add_new",
+                "type": "button"
+            }
+        ]
+
+    else:
+        actions = [
+            {
+                "name": "page",
+                "text": "Add New",
+                "value": "add_new",
+                "type": "button"
+            }
+        ]
+
+
+    attachment['actions'] = actions
+    return [attachment]
+
+

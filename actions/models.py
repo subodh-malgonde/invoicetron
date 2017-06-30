@@ -37,6 +37,7 @@ class Invoice(models.Model):
     confirmation_status = models.BooleanField(default=False)
     cancel_status = models.BooleanField(default=False)
     stripe_charge_id = models.CharField(max_length=100, blank=True, null=True)
+    payment_date = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return "%s - %s - %s" % (str(self.client), self.description, str(self.get_amount()))
@@ -91,7 +92,7 @@ class Invoice(models.Model):
             queue.enqueue('landing.utils.call_lex_for_creating_invoice', customer=customer, username=username,
                           channel_id=channel_id, json_data=json_data)
 
-            response_message = "Please wait your invoice is being created. "
+            response_message = 'You are invoicing `%s` ' % customer.name
 
         return response_message
 

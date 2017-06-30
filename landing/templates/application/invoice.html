@@ -114,20 +114,7 @@
                   </td>
               </tr>
 
-              <tr class="heading">
-                  <td>
-                      Payment Status
-                  </td>
-                  <td></td>
-              </tr>
 
-              <tr class="details">
-                  <td>
-                      {{ payment_status }}
-
-                  </td>
-
-              </tr>
 
 
               <tr class="heading">
@@ -157,21 +144,39 @@
                      Total: {{ invoice.get_amount }}
                   </td>
               </tr>
-              <tr>
+
+              <tr class="heading">
+                  <td>
+                      Payment Status
+                  </td>
+                  <td></td>
+              </tr>
+
+              <tr class="details">
+                  <td>
+                      {{ payment_status }}
+
+                  </td>
+
+              </tr>
+                <tr>
                 <td>
                   {% if invoice.payment_status == 'paid' %}
 
+                        Paid On : {{ payment_date }}
                         {% else %}
-                            <form action="" method="POST">
-                              <script
-                                src="https://checkout.stripe.com/v2/checkout.js" class="stripe-button"
-                                data-key="pk_test_ivY4mBasStCIOGDUaDgaHu2W"
-                                data-amount={{ amount }}
-                                data-name="InvoiceTron"
-                                data-description="demo">
-                              </script>
-                            </form>
-                        {% endif %}
+                            {% if stripe == True %}
+                                <form action="" method="POST">
+                                  <script
+                                    src="https://checkout.stripe.com/v2/checkout.js" class="stripe-button"
+                                    data-key="pk_test_ivY4mBasStCIOGDUaDgaHu2W"
+                                    data-amount={{ amount }}
+                                    data-name="InvoiceTron"
+                                    data-description="demo">
+                                  </script>
+                                </form>
+                            {% endif %}
+                {% endif %}
                 </td>
                   <td>
                   <form action="" method="post">

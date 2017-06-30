@@ -1,3 +1,4 @@
+from django.utils import timezone
 import requests
 import stripe
 from django.core.urlresolvers import reverse
@@ -37,7 +38,7 @@ def slack_hook(request):
         action_type, action_id = json_data["callback_id"].split(":")
         attachments = None
         if action_type == "invoice":
-            response_message = 'Click on this link to get your pdf  ' + request.build_absolute_uri(reverse('generate_pdf', args=[action_id]))
+            response_message = 'To get pdf of your invoice click :point_right: <%s|here> ' % request.build_absolute_uri(reverse('generate_pdf', args=[action_id]))
 
         elif action_type == "settings":
             response_message, attachments = Company.handle_team_settings(json_data)
@@ -77,8 +78,16 @@ def generate_invoice(request, invoice_id):
         raise Http404("Invoice does not exist")
 
     if request.method == "GET":
-
-        return render(request, 'application/invoice.html', {'invoice': invoice, 'payment_status' : payment_status })
+        stripe_status = False
+        date = None
+        team = Team.objects.filter(slack_team_id = invoice.author.company.name).first()
+        stripe_account = StripeAccountDetails.objects.filter(team=team).first()
+        payment_date = invoice.payment_date
+        if payment_date:
+            date = invoice.payment_date.date()
+        if stripe_account:
+            stripe_status = True
+        return render(request, 'application/invoice.html', {'invoice': invoice, 'payment_status' : payment_status, 'stripe' : stripe_status, 'payment_date' : date})
     else:
         if 'download' in request.POST:
             return pdf_generation(request, invoice, payment_status)##render_to_pdf('application/invoice.html', {'invoice': invoice})
@@ -108,11 +117,15 @@ def generate_invoice(request, invoice_id):
             invoice.save()
             if charge['status'] == 'succeeded':
                 invoice.payment_status = Invoice.PAID
+                invoice.payment_date = timezone.now()
                 invoice.save()
                 attachments = build_attachment_for_confirmed_invoice(invoice)
                 message = "Your invoice has been paid"
                 send_message_to_user(message, employee, team, attachments)
-                return render(request, 'application/invoice.html',{'invoice': invoice})
+                payment_status = invoice.get_payment_status_display()
+                payment_date = invoice.payment_date.date()
+
+                return render(request, 'application/invoice.html',{'invoice': invoice, 'payment_status' : payment_status, 'payment_date' : payment_date})
 
 def pdf_generation(request, invoice, payment_status):
     context = {'invoice': invoice, 'payment_status': payment_status}
@@ -147,9 +160,8 @@ def stripe_oauth(request):
                                         stripe_user_id=stripe_user_id,
                                         stripe_publish_key=stripe_publish_key)
     send_message_to_user(message='Your stripe account was successfully connected.\n'
-                                     'Type `create invoices` to start invoicing or clients', employee=employee, team=team)
+                                     'Type `create invoice` to start invoicing or client', employee=employee, team=team)
     return render(request, 'application/after_connection.html')
-
 
 def index(request):
     client_id = settings.SLACK_CLIENT_ID

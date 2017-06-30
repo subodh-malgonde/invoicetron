@@ -30,7 +30,6 @@ class Company(models.Model):
             else:
                 response_message = 'Here is your company logo'
 
-
         elif selected_value == "name":
 
             username = json_data['user']['id']
@@ -50,13 +49,21 @@ class Company(models.Model):
             team = Team.objects.get(slack_team_id=json_data['team']['id'])
             stripe_account = StripeAccountDetails.objects.filter(team=team).first()
             if not stripe_account:
-                response_message = 'Please <https://connect.stripe.com/oauth/authorize?response_type=code&client_id=ca_As3LPNYpHh1uDPy8C8bn69DTWkIJ9ZTk&scope=read_write&state=%s|Click Here>' \
+                response_message = 'Please <https://connect.stripe.com/oauth/authorize?response_type=code&client_id=ca_As3LPNYpHh1uDPy8C8bn69DTWkIJ9ZTk&scope=read_write&state=%s|click here>' \
                                    ' to connect your stripe account with InvoiceTron ' % str(team.id)
 
 
             else:
                 response_message = 'You already have stripe account connected with your team'
-                attachments = build_attachment_for_settings(team)
+                name = False
+                logo = False
+                company_name = company.company_name
+                if company_name:
+                    name =True
+                company_logo = company.company_logo
+                if company_logo:
+                    logo = True
+                attachments = build_attachment_for_settings(team,company_name=name, company_logo=logo)
 
         return response_message, attachments
 
@@ -153,7 +160,7 @@ class Customer(models.Model):
         attachments = None
         response_message = ''
         if selected_value == 'invoice':
-            response_message = 'Please wait. Your invoice is being created for %s ' % customer.name
+            response_message = 'You are invoicing `%s` ' % customer.name
             queue = django_rq.get_queue('high')
             queue.enqueue('landing.utils.call_lex_for_creating_invoice', customer=customer, username=username, channel_id=channel_id, json_data=json_data)
 

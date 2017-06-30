@@ -348,92 +348,135 @@ def build_message_for_help():
 
     return message
 
-def build_attachment_for_settings(team):
+def build_attachment_for_settings(team, company_name, company_logo):
     company = Company.objects.get(name=team.slack_team_id)
     attachment = {"title": "", "text": ""}
 
     attachment["callback_id"] = "settings:%d" % team.id
 
-    actions = [
-        {
-            "name": "settings",
-            "text": "Add logo",
-            "value": "logo",
-            "type": "button"
-        },
-        {
-            "name": "settings",
-            "text": "Add Legal Name",
-            "value": "name",
-            "type": "button"
-        },
+    if company_name is False and company_logo is False:
+        fields = [
+            {
+                "title": "You have not entered your company details",
+                "value": "",
+                "short": True
+            }
+        ]
+    else:
 
-        {
-            "name": "settings",
-            "text": "Connect Stripe",
-            "value": "stripe_connect",
-            "type": "button"
-        }
+        fields = [
+            {
+                "title": "Legal Name",
+                "value": company.company_name,
+                "short": True
+            }
+        # },
+        # {
+        #     "title": "Company Logo",
+        #     "value": "logo",
+        #     "short": True
+        # }
     ]
+    attachment["fields"] = fields
+
+    if company_name is True and company_logo is True:
+
+        actions = [
+            {
+                "name": "settings",
+                "text": "Edit logo",
+                "value": "logo",
+                "type": "button"
+            },
+            {
+                "name": "settings",
+                "text": "Edit Legal Name",
+                "value": "name",
+                "type": "button"
+            },
+
+            {
+                "name": "settings",
+                "text": "Connect Stripe",
+                "value": "stripe_connect",
+                "type": "button"
+            }
+        ]
+
+    elif company_name is True and company_logo is False:
+        actions = [
+            {
+                "name": "settings",
+                "text": "Add logo",
+                "value": "logo",
+                "type": "button"
+            },
+            {
+                "name": "settings",
+                "text": "Edit Legal Name",
+                "value": "name",
+                "type": "button"
+            },
+
+            {
+                "name": "settings",
+                "text": "Connect Stripe",
+                "value": "stripe_connect",
+                "type": "button"
+            }
+        ]
+
+    elif company_name is False and company_logo is True:
+        actions = [
+            {
+                "name": "settings",
+                "text": "Edit logo",
+                "value": "logo",
+                "type": "button"
+            },
+            {
+                "name": "settings",
+                "text": "Add Legal Name",
+                "value": "name",
+                "type": "button"
+            },
+
+            {
+                "name": "settings",
+                "text": "Connect Stripe",
+                "value": "stripe_connect",
+                "type": "button"
+            }
+        ]
+
+    else:
+        actions = [
+            {
+                "name": "settings",
+                "text": "Add logo",
+                "value": "logo",
+                "type": "button"
+            },
+            {
+                "name": "settings",
+                "text": "Add Legal Name",
+                "value": "name",
+                "type": "button"
+            },
+
+            {
+                "name": "settings",
+                "text": "Connect Stripe",
+                "value": "stripe_connect",
+                "type": "button"
+            }
+        ]
+
+
 
     attachment["actions"] = actions
 
-    fields = [
-        {
-            "title": "Company Name",
-            "value": company.company_name,
-            "short": True
-        }
-    ]
 
-    attachment["fields"] = fields
-
-    return [attachment]
-
-def build_attachment_for_edited_settings(team):
-    company = Company.objects.get(name=team.slack_team_id)
-    attachment = {"title": "", "text": ""}
-
-    attachment["callback_id"] = "settings:%d" % team.id
-
-    actions = [
-        {
-            "name": "settings",
-            "text": "Edit Logo",
-            "value": "logo",
-            "type": "button"
-        },
-        {
-            "name": "settings",
-            "text": "Edit Legal Name",
-            "value": "name",
-            "type": "button"
-        },
-
-        {
-            "name": "settings",
-            "text": "Connect Stripe",
-            "value": "stripe_connect",
-            "type": "button"
-        }
-    ]
-
-    attachment["actions"] = actions
-
-    fields = [
-        {
-            "title": "Company Name",
-            "value": company.company_name,
-            "short": True
-        },
-        {
-            "title": "Company Logo",
-            "value": "logo",
-            "short": True
-        }
-    ]
-
-    attachment["fields"] = fields
 
     return [attachment]
 

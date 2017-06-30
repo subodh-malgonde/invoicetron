@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from accounts.models import Employee, Team, Customer, Company
 from accounts.utils import build_attachments_for_edited_invoice, send_message_to_user, build_attachments_for_invoice, \
     build_attachment_for_confirmed_invoice, build_attachment_for_error, build_message_for_help, \
-    build_attachment_for_listing_clients, build_attachment_for_settings, build_attachment_for_edited_settings, \
+    build_attachment_for_listing_clients, build_attachment_for_settings, \
     build_attachment_for_editing_client, build_attachment_for_new_invoice, build_attachment_for_no_clients, \
     build_attachment_for_pagination_for_invoices, \
     build_attachment_for_pagination_for_clients
@@ -13,7 +13,6 @@ from actions.models import LineItem, Invoice
 import boto3
 from slackclient import SlackClient
 import json
-
 
 def handle_slack_events(events):
     for event in events:
@@ -73,26 +72,31 @@ def handle_slack_event(event):
 
                             if response['intentName'] == 'settings':
                                 if response['dialogState'] == 'Fulfilled':
-                                    company_name = company.company_name
-                                    company_logo = company.company_logo
-                                    if company_name is None and company_logo is None:
-                                        message = 'You have not set your company details'
-                                        attachments = build_attachment_for_edited_settings(team)
+
+                                    owner = Team.objects.filter(owner=employee).first()
+                                    if owner:
+                                        name = False
+                                        logo = False
+                                        company_name = company.company_name
+                                        if company_name:
+                                            name = True
+                                        company_logo = company.company_logo
+                                        if company_logo:
+                                            logo = True
+                                        message = ''
+                                        attachments = build_attachment_for_settings(team, company_name=name, company_logo=logo)
                                         attachment_str = json.dumps(attachments)
                                         client.api_call('chat.postMessage', channel=event['channel'],
                                                         text=message, attachments=attachment_str)
                                     else:
-                                        message = ''
-                                        attachments = build_attachment_for_settings(team)
-                                        attachment_str = json.dumps(attachments)
+                                        message = ' :x: Sorry you are not the owner of your company. So you cannot manage the settings.'
                                         client.api_call('chat.postMessage', channel=event['channel'],
-                                                        text=message, attachments=attachment_str)
+                                                        text=message)
 
                             elif response['intentName'] == 'create_invoice':
                                 if response['dialogState'] == 'ElicitSlot':
 
-                                    if response['slots']['ClientName'] is not None and response['slots'][
-                                        'Amount'] is not None:
+                                    if response['slots']['ClientName'] is not None and response['slots']['Amount'] is not None:
 
                                         amount = response['slots']['Amount']
                                         name_of_client = response['slots']['ClientName']
@@ -167,7 +171,8 @@ def handle_slack_event(event):
                                     else:
                                         state.state = UserInteractionState.LINE_ITEM_DESCRIPTION_AWAITED
                                         state.save()
-                                        message = 'Great! Almost there. Please type description.'
+                                        message = 'Great! Almost there.You are invoicing {} of $ {}. \n' \
+                                                  'Now Please enter the description.'.format(name_of_client,amount)
                                         client.api_call('chat.postMessage', channel=event['channel'],
                                                         text=message)
                                         create_invoice(invoice_client, employee, amount)
@@ -202,9 +207,7 @@ def handle_slack_event(event):
                                     attachment_str = json.dumps(attachment)
                                     client.api_call('chat.postMessage', channel=event['channel'],
                                                     text=response['message'], attachments=attachment_str)
-                                    if 'invoice' in response['sessionAttributes'].keys() and \
-                                                    response['sessionAttributes']['invoice']['ClientName'] == \
-                                                    response['slots']['ClientName']:
+                                    if 'invoice' in response['sessionAttributes'].keys() and response['sessionAttributes']['invoice']['ClientName'] == response['slots']['ClientName']:
                                         session = json.loads(response['sessionAttributes']['invoice'])
                                         client_name = session['ClientName']
                                         total_amount = session['Amount']
@@ -227,7 +230,8 @@ def handle_slack_event(event):
                                                             text=response2['message'])
                                             state.state = UserInteractionState.LINE_ITEM_DESCRIPTION_AWAITED
                                             state.save()
-                                            message = 'Enter the description for this invoice'
+                                            message = 'Great! Almost there.You are invoicing {} of $ {}. \n' \
+                                                      'Now Please enter the description.'.format(client_name,total_amount)
                                             client.api_call('chat.postMessage', channel=event['channel'],
                                                             text=message)
                                             create_invoice(invoice_client, employee, total_amount)
@@ -345,9 +349,16 @@ def handle_slack_event(event):
 
                         state.state = UserInteractionState.CHILLING
                         state.save()
-
+                        name = False
+                        logo = False
+                        company_name = company.company_name
+                        if company_name:
+                            name = True
+                        company_logo = company.company_logo
+                        if company_logo:
+                            logo = True
                         message = "Great!"
-                        attachments = build_attachment_for_edited_settings(team)
+                        attachments = build_attachment_for_settings(team, company_name=name, company_logo=logo)
                         send_message_to_user(message, employee, team, attachments)
 
                     elif state.state == UserInteractionState.CLIENT_NAME_AWAITED:
@@ -424,7 +435,6 @@ def list_invoices(employee, team, page, payment_status, sent_status):
 
     return message,attachments
 
-
 def list_clients(employee, team, page):
 
     customers = Customer.objects.filter(team=team).all()
@@ -452,7 +462,6 @@ def list_clients(employee, team, page):
         attachments.extend(pagination)
 
     return message, attachments
-
 
 def call_lex_for_creating_invoice(username, channel_id, json_data, customer=None):
     client2 = boto3.client('lex-runtime')

@@ -89,7 +89,7 @@ def handle_slack_event(event):
                                         client.api_call('chat.postMessage', channel=event['channel'],
                                                         text=message, attachments=attachment_str)
                                     else:
-                                        message = ' :x: Sorry you are not the owner of your company. So you cannot manage the settings.'
+                                        message = ' :x: You cannot manage settings because you are not the owner of the company.'
                                         client.api_call('chat.postMessage', channel=event['channel'],
                                                         text=message)
 

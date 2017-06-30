@@ -112,8 +112,7 @@ def handle_slack_event(event):
                                         else:
                                             client.api_call('chat.postMessage', channel=event['channel'],
                                                             text=response['message'])
-                                    elif response['slots']['ClientName'] is not None and response['slots'][
-                                        'Amount'] is None:
+                                    elif response['slots']['ClientName'] is not None and response['slots']['Amount'] is None:
 
                                         name_of_client = response['slots']['ClientName']
                                         invoice_client = Customer.objects.filter(name__icontains=name_of_client).first()
@@ -130,9 +129,12 @@ def handle_slack_event(event):
                                             )
                                             client.api_call('chat.postMessage', channel=event['channel'],
                                                             text=response2['message'])
+                                        else:
+                                            client.api_call('chat.postMessage', channel=event['channel'],
+                                                            text=response['message'])
 
-                                    elif response['slots']['ClientName'] is None and response['slots'][
-                                        'Amount'] is None:
+
+                                    elif response['slots']['ClientName'] is None and response['slots']['Amount'] is None:
                                         attachment = build_attachment_for_new_invoice()
                                         attachment_str = json.dumps(attachment)
                                         client.api_call('chat.postMessage', channel=event['channel'],

@@ -58,10 +58,10 @@ def slack_hook(request):
             response_message = Invoice.handle_new_invoice(json_data)
 
         elif action_type == "client_list":
-            response_message = Customer.handle_client_list(action_id, json_data)
+            response_message, attachments = Customer.handle_client_list(action_id, json_data)
 
         elif action_type == "invoice_list":
-            response_message = Invoice.handle_invoice_list(action_id, json_data)
+            response_message, attachments = Invoice.handle_invoice_list(action_id, json_data)
 
         return JsonResponse({"text": response_message, "attachments": attachments})
 

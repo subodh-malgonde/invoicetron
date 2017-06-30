@@ -45,15 +45,17 @@ def handle_slack_event(event):
                                                            slack_username=response['user']['name'],
                                                            slack_tz_label=response['user']['tz_label'],
                                                            slack_tz=response['user']['tz'])
-
+                state = UserInteractionState.get_state_for_employee(employee)
                 new_message = event['text']
                 wordlist = ['cancel', 'bye', 'quit', 'exit']
                 if new_message in wordlist:
                     client.api_call('chat.postMessage', channel=event['channel'],
                                     text='OK')
+                    state.state = UserInteractionState.CHILLING
+                    state.save()
 
                 else:
-                    state = UserInteractionState.get_state_for_employee(employee)
+                    # state = UserInteractionState.get_state_for_employee(employee)
 
                     if state.state == UserInteractionState.CHILLING:
                         if '$' in new_message:
@@ -234,23 +236,27 @@ def handle_slack_event(event):
 
                             elif response['intentName'] == 'list_invoices':
                                 if response['dialogState'] == 'Fulfilled':
-
+                                    message = ''
+                                    attachments = None
                                     if response['slots']['Paid'] == None and response['slots']['Sent'] == None:
-                                        list_invoices(employee, team, page=1, payment_status=None, sent_status=None)
+                                        message, attachments = list_invoices(employee, team, page=1, payment_status=None, sent_status=None)
                                     elif response['slots']['Paid'] is not None and response['slots']['Sent'] == None:
                                         payment_status = response['slots']['Paid']
-                                        list_invoices(employee, team, page=1, payment_status=payment_status,
+                                        message, attachments = list_invoices(employee, team, page=1, payment_status=payment_status,
                                                       sent_status=None)
                                     elif response['slots']['Paid'] == None and response['slots']['Sent'] is not None:
                                         sent_status = response['slots']['Sent']
-                                        list_invoices(employee, team, page=1, payment_status=None,
+                                        message, attachments = list_invoices(employee, team, page=1, payment_status=None,
                                                       sent_status=sent_status)
                                     elif response['slots']['Paid'] is not None and response['slots'][
                                         'Sent'] is not None:
                                         payment_status = response['slots']['Paid']
                                         sent_status = response['slots']['Sent']
-                                        list_invoices(employee, team, page=1, payment_status=payment_status,
+                                        message, attachments = list_invoices(employee, team, page=1, payment_status=payment_status,
                                                       sent_status=sent_status)
+
+                                    send_message_to_user(message=message, employee=employee, team=team,
+                                                         attachments=attachments)
 
                             elif response['intentName'] == 'start':
                                 message = build_message_for_help()
@@ -259,7 +265,9 @@ def handle_slack_event(event):
 
                             elif response['intentName'] == 'list_clients':
                                 if response['dialogState'] == 'Fulfilled':
-                                    list_clients(employee, team, page=1)
+                                    message, attachments = list_clients(employee, team, page=1)
+                                    send_message_to_user(message=message, employee=employee, team=team,
+                                                         attachments=attachments)
 
                             else:
                                 message = " :x: I am afraid I did not understand. Please type `help` to know more about me.\n" \
@@ -414,8 +422,8 @@ def list_invoices(employee, team, page, payment_status, sent_status):
         pagination = build_attachment_for_pagination_for_invoices(view_more=view_more, page=page)
         attachments.extend(pagination)
 
+    return message,attachments
 
-    send_message_to_user(message=message,employee=employee, team=team,attachments=attachments)
 
 def list_clients(employee, team, page):
 
@@ -443,7 +451,8 @@ def list_clients(employee, team, page):
         pagination = build_attachment_for_pagination_for_clients(view_more=view_more, page=page)
         attachments.extend(pagination)
 
-    send_message_to_user(message=message, employee=employee, team=team, attachments=attachments)
+    return message, attachments
+
 
 def call_lex_for_creating_invoice(username, channel_id, json_data, customer=None):
     client2 = boto3.client('lex-runtime')

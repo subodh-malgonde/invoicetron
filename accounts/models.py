@@ -213,11 +213,12 @@ class Customer(models.Model):
         channel_id = json_data['channel']['id']
         employee = Employee.objects.filter(user__username=username).first()
         team = Team.objects.filter(slack_team_id = json_data['team']['id']).first()
+        attachments = None
         if selected_value == 'view_more':
-            response_message = ''
+
             page_number = int(page_number)
             page_number += 1
-            list_clients(employee, team, page_number)
+            response_message, attachments = list_clients(employee, team, page_number)
 
         elif selected_value == 'add_new':
             response_message = 'Lets add a new client.'
@@ -225,7 +226,7 @@ class Customer(models.Model):
             queue.enqueue('landing.utils.call_lex_for_creating_client', username=username, json_data=json_data,
                           channel_id=channel_id)
 
-        return response_message
+        return response_message, attachments
 
 
 class StripeAccountDetails(models.Model):

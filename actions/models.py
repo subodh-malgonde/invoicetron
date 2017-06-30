@@ -103,12 +103,14 @@ class Invoice(models.Model):
         username = json_data['user']['id']
         channel_id = json_data['channel']['id']
         employee = Employee.objects.filter(user__username=username).first()
+        response_message = ''
+        attachments = None
         team = Team.objects.filter(slack_team_id=json_data['team']['id']).first()
         if selected_value == 'view_more':
-            response_message = ''
+
             page_number = int(page_number)
             page_number += 1
-            list_invoices(employee, team,page_number, payment_status=None,sent_status=None)
+            response_message, attachments = list_invoices(employee, team,page_number, payment_status=None,sent_status=None)
 
         elif selected_value == 'add_new':
             response_message = 'Lets add a new invoice.'
@@ -116,7 +118,7 @@ class Invoice(models.Model):
             queue.enqueue('landing.utils.call_lex_for_creating_invoice', username=username, json_data=json_data,
                           channel_id=channel_id)
 
-        return response_message
+        return response_message, attachments
 
 
 class LineItem(models.Model):

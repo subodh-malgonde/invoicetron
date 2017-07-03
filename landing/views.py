@@ -74,6 +74,9 @@ def generate_invoice(request, invoice_id):
     try:
         invoice = Invoice.objects.get(pk=invoice_id)
         payment_status = invoice.get_payment_status_display()
+        payment_date = invoice.payment_date
+        if payment_date:
+            date = invoice.payment_date.date()
     except Invoice.DoesNotExist:
         raise Http404("Invoice does not exist")
 
@@ -82,15 +85,13 @@ def generate_invoice(request, invoice_id):
         date = None
         team = Team.objects.filter(slack_team_id = invoice.author.company.name).first()
         stripe_account = StripeAccountDetails.objects.filter(team=team).first()
-        payment_date = invoice.payment_date
-        if payment_date:
-            date = invoice.payment_date.date()
+
         if stripe_account:
             stripe_status = True
         return render(request, 'application/invoice.html', {'invoice': invoice, 'payment_status' : payment_status, 'stripe' : stripe_status, 'payment_date' : date})
     else:
         if 'download' in request.POST:
-            return pdf_generation(request, invoice, payment_status, payment_date)##render_to_pdf('application/invoice.html', {'invoice': invoice})
+            return pdf_generation(request, invoice, payment_status, date)##render_to_pdf('application/invoice.html', {'invoice': invoice})
         else:
             team = invoice.client.team
             employee = Employee.objects.get(slack_username=invoice.author)
@@ -127,7 +128,7 @@ def generate_invoice(request, invoice_id):
 
                 return render(request, 'application/invoice.html',{'invoice': invoice, 'payment_status' : payment_status, 'payment_date' : payment_date})
 
-def pdf_generation(request, invoice, payment_status, payment_date):
+def pdf_generation(request, invoice, payment_status, date):
     context = {'invoice': invoice, 'payment_status': payment_status, 'payment_date' : date}
     html_template ='application/invoice.html'
     template_string = render_to_string(html_template, context)

@@ -157,5 +157,3 @@ RQ_QUEUES = {
         'DEFAULT_TIMEOUT': 500,
     }
 }
-
-

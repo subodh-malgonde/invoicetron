@@ -171,8 +171,8 @@ def handle_slack_event(event):
                                     else:
                                         state.state = UserInteractionState.LINE_ITEM_DESCRIPTION_AWAITED
                                         state.save()
-                                        message = 'Great! Almost there.You are invoicing {} of $ {}. \n' \
-                                                  'Now Please enter the description.'.format(name_of_client,amount)
+                                        message = 'Great! Almost there. You are invoicing {} of $ {}. \n' \
+                                                  'Now please enter the description.'.format(name_of_client,amount)
                                         client.api_call('chat.postMessage', channel=event['channel'],
                                                         text=message)
                                         create_invoice(invoice_client, employee, amount)
@@ -230,8 +230,8 @@ def handle_slack_event(event):
                                                             text=response2['message'])
                                             state.state = UserInteractionState.LINE_ITEM_DESCRIPTION_AWAITED
                                             state.save()
-                                            message = 'Great! Almost there.You are invoicing {} of $ {}. \n' \
-                                                      'Now Please enter the description.'.format(client_name,total_amount)
+                                            message = 'Great! Almost there. You are invoicing {} of $ {}. \n' \
+                                                      'Now please enter the description.'.format(client_name,total_amount)
                                             client.api_call('chat.postMessage', channel=event['channel'],
                                                             text=message)
                                             create_invoice(invoice_client, employee, total_amount)

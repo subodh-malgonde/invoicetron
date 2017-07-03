@@ -592,5 +592,3 @@ def build_attachment_for_pagination_for_clients(view_more, page):
 
     attachment['actions'] = actions
     return [attachment]
-
-

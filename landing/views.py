@@ -77,6 +77,8 @@ def generate_invoice(request, invoice_id):
         payment_date = invoice.payment_date
         if payment_date:
             date = invoice.payment_date.date()
+        else:
+            date = None
     except Invoice.DoesNotExist:
         raise Http404("Invoice does not exist")
 

@@ -38,7 +38,7 @@ def slack_hook(request):
         action_type, action_id = json_data["callback_id"].split(":")
         attachments = None
         if action_type == "invoice":
-            response_message = 'To get pdf of your invoice click :point_right: <%s|here> ' % request.build_absolute_uri(reverse('generate_pdf', args=[action_id]))
+            response_message = 'Here is a link to your invoice <%s|click here> ' % request.build_absolute_uri(reverse('generate_pdf', args=[action_id]))
 
         elif action_type == "settings":
             response_message, attachments = Company.handle_team_settings(json_data)

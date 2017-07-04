@@ -137,9 +137,9 @@ SLACK_CLIENT_ID = "52480368274.204111553504"
 SLACK_CLIENT_SECRET = "93ad0d6e83bf56468419eb7f31070c53"
 
 
-STRIPE_CLIENT_ID = 'ca_As3LPNYpHh1uDPy8C8bn69DTWkIJ9ZTk'
-STRIPE_CLIENT_SECRET_KEY = 'sk_test_RApZQzKJ1zi0aLiPIMRn6E9Y'
-STRIPE_CONNECT_URL = 'https://connect.stripe.com/oauth/authorize?response_type=code&client_id=ca_As3LPNYpHh1uDPy8C8bn69DTWkIJ9ZTk&scope=read_write'
+STRIPE_CLIENT_ID = os.getenv('STRIPE_CLIENT_ID')
+STRIPE_CLIENT_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+STRIPE_CONNECT_URL = 'https://connect.stripe.com/oauth/authorize?response_type=code&client_id=%s&scope=read_write' % STRIPE_CLIENT_ID
 STRIPE_OAUTH_URL = 'https://connect.stripe.com/oauth/token'
 
 

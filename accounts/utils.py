@@ -1,6 +1,7 @@
 import json
 from accounts.models import Customer, Company
 
+
 def open_dm_channel(sc, user_id):
     open_channel = sc.api_call('im.open', user=user_id)
     if open_channel['ok']:
@@ -89,7 +90,8 @@ def build_attachments_for_invoice(invoice):
 def build_attachments_for_edited_invoice(invoice):
     edited_attachment = {"title": "Invoice id #%d" % invoice.id, "text": "", "color": "good"}
     edited_attachment["callback_id"] = "invoice_edition:%d" % invoice.id
-
+    from accounts.models import Team
+    team = Team.objects.filter(slack_team_id=invoice.author.company.name)
     line_item = invoice.line_items.first()
 
     actions = [
@@ -97,7 +99,7 @@ def build_attachments_for_edited_invoice(invoice):
             "name": "Customer name",
             "text": "Choose a customer",
             "type": "select",
-            "options": [{"text": customer.name, "value": str(customer.id)} for customer in Customer.objects.all()],
+            "options": [{"text": customer.name, "value": str(customer.id)} for customer in Customer.objects.filter(team=team)],
             "selected_options": [
                 {
                     "text": invoice.client.name,
@@ -505,21 +507,25 @@ def build_attachment_for_no_clients():
 
     return [attachment]
 
-def build_attachment_for_new_invoice():
-    attachment = {"title": 'Please select a client from list below', "text": "", "color": "good"}
+def build_attachment_for_new_invoice(team):
+    customer = Customer.objects.filter(team=team)
+    if customer:
+        attachment = {"title": 'Please select a client from list below', "text": "", "color": "good"}
 
-    attachment["callback_id"] = "invoice_dropdown: "
+        attachment["callback_id"] = "invoice_dropdown: "
 
-    actions = [
-        {
-            "name": "Customer name",
-            "text": "Choose a customer",
-            "type": "select",
-            "options": [{"text": customer.name, "value": str(customer.id)} for customer in Customer.objects.all()]
-        }
-    ]
+        actions = [
+            {
+                "name": "Customer name",
+                "text": "Choose a customer",
+                "type": "select",
+                "options": [{"text": customer.name, "value": str(customer.id)} for customer in Customer.objects.filter(team=team)]
+            }
+        ]
 
-    attachment['actions'] = actions
+        attachment['actions'] = actions
+    else:
+        attachment = None
 
     return [attachment]
 

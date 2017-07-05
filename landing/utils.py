@@ -141,10 +141,15 @@ def handle_slack_event(event):
 
 
                                     elif response['slots']['ClientName'] is None and response['slots']['Amount'] is None:
-                                        attachment = build_attachment_for_new_invoice()
-                                        attachment_str = json.dumps(attachment)
+                                        attachment = build_attachment_for_new_invoice(team)
+                                        if attachment is None:
+                                            message = 'Please create client first'
+                                            attachment_str = None
+                                        else:
+                                            message = ''
+                                            attachment_str = json.dumps(attachment)
                                         client.api_call('chat.postMessage', channel=event['channel'],
-                                                        text='', attachments=attachment_str)
+                                                        text=message, attachments=attachment_str)
 
 
                                     else:
@@ -179,8 +184,7 @@ def handle_slack_event(event):
 
                             elif response['intentName'] == 'create_client':
                                 if response['dialogState'] == 'ElicitSlot':
-                                    if response['slots']['ClientName'] is not None and response[
-                                        'slotToElicit'] == 'ClientEmail':
+                                    if response['slots']['ClientName'] is not None and response['slotToElicit'] == 'ClientEmail':
                                         name_of_client = response['slots']['ClientName']
                                         customer = Customer.objects.filter(name__icontains=name_of_client).first()
                                         if not customer:

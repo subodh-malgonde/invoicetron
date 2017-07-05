@@ -135,6 +135,7 @@ SLACK_CLIENT_SECRET = os.getenv('SLACK_CLIENT_SECRET')
 
 
 STRIPE_CLIENT_ID = os.getenv('STRIPE_CLIENT_ID')
+STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUB_KEY')
 STRIPE_CLIENT_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_CONNECT_URL = 'https://connect.stripe.com/oauth/authorize?response_type=code&client_id=%s&scope=read_write' % STRIPE_CLIENT_ID
 STRIPE_OAUTH_URL = 'https://connect.stripe.com/oauth/token'

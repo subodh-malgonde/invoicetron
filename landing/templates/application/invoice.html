@@ -80,7 +80,7 @@
                       <table>
                           <tr>
                               <td class="title">
-                                 {{ invoice.author.company.company_name }} {# <img src="file://{{imageDirectory}}/datboi-25pc.png" >#}
+                                 INVOICE {# <img src="file://{{imageDirectory}}/datboi-25pc.png" >#}
                               </td>
 
                               <td>
@@ -169,7 +169,7 @@
                                 <form action="" method="POST">
                                   <script
                                     src="https://checkout.stripe.com/v2/checkout.js" class="stripe-button"
-                                    data-key="pk_test_ivY4mBasStCIOGDUaDgaHu2W"
+                                    data-key={{ stripe_pub_key }}
                                     data-amount={{ amount }}
                                     data-name="InvoiceTron"
                                     data-description="demo">

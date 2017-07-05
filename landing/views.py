@@ -75,6 +75,7 @@ def generate_invoice(request, invoice_id):
         invoice = Invoice.objects.get(pk=invoice_id)
         payment_status = invoice.get_payment_status_display()
         payment_date = invoice.payment_date
+        stripe_pub_key = settings.STRIPE_PUBLIC_KEY
         if payment_date:
             date = invoice.payment_date.date()
         else:
@@ -90,7 +91,7 @@ def generate_invoice(request, invoice_id):
 
         if stripe_account:
             stripe_status = True
-        return render(request, 'application/invoice.html', {'invoice': invoice, 'payment_status' : payment_status, 'stripe' : stripe_status, 'payment_date' : date})
+        return render(request, 'application/invoice.html', {'invoice': invoice, 'payment_status' : payment_status, 'stripe' : stripe_status, 'payment_date' : date, 'stripe_pub_key' : stripe_pub_key})
     else:
         if 'download' in request.POST:
             return pdf_generation(request, invoice, payment_status, date)##render_to_pdf('application/invoice.html', {'invoice': invoice})
@@ -152,7 +153,6 @@ def stripe_oauth(request):
         'code': code
     }
     response = requests.post(STRIPE_OAUTH_URL, params=data)
-
     team = Team.objects.get(id=team_id)
     employee = Employee.objects.get(user=team.owner.user)
     stripe_access_token = response.json().get('access_token')

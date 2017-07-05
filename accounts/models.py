@@ -46,11 +46,12 @@ class Company(models.Model):
         elif selected_value == "stripe_connect":
 
             from accounts.utils import build_attachment_for_settings
+            from django.conf import settings
             team = Team.objects.get(slack_team_id=json_data['team']['id'])
             stripe_account = StripeAccountDetails.objects.filter(team=team).first()
             if not stripe_account:
-                response_message = 'Please <https://connect.stripe.com/oauth/authorize?response_type=code&client_id=ca_As3LPNYpHh1uDPy8C8bn69DTWkIJ9ZTk&scope=read_write&state=%s|click here>' \
-                                   ' to connect your stripe account with InvoiceTron ' % str(team.id)
+                response_message = 'Please <https://connect.stripe.com/oauth/authorize?response_type=code&client_id={}&scope=read_write&state={}|click here>' \
+                                   ' to connect your stripe account with InvoiceTron ' .format(settings.STRIPE_CLIENT_ID, str(team.id))
 
 
             else:

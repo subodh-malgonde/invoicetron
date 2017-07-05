@@ -80,7 +80,7 @@
                       <table>
                           <tr>
                               <td class="title">
-                                 INVOICE {# <img src="file://{{imageDirectory}}/datboi-25pc.png" >#}
+                                  <img src="https://www.anaek.com/images/brand-logo.png" >
                               </td>
 
                               <td>
@@ -172,7 +172,7 @@
                                     data-key={{ stripe_pub_key }}
                                     data-amount={{ amount }}
                                     data-name="InvoiceTron"
-                                    data-description="demo">
+                                    data-description={{ invoice.author.company.company_name }}>
                                   </script>
                                 </form>
                             {% endif %}

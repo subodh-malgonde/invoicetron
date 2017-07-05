@@ -200,7 +200,7 @@ def handle_slack_event(event):
                                     else:
                                         client.api_call('chat.postMessage', channel=event['channel'],
                                                         text=response['message'])
-                                if response['dialogState'] == 'Fulfilled':
+                                elif response['dialogState'] == 'Fulfilled':
                                     response_email = response['slots']['ClientEmail']
                                     if "|" in response_email:
                                         response_email = response_email.split("|")[1]
@@ -211,34 +211,36 @@ def handle_slack_event(event):
                                     attachment_str = json.dumps(attachment)
                                     client.api_call('chat.postMessage', channel=event['channel'],
                                                     text=response['message'], attachments=attachment_str)
-                                    if 'invoice' in response['sessionAttributes'].keys() and response['sessionAttributes']['invoice']['ClientName'] == response['slots']['ClientName']:
-                                        session = json.loads(response['sessionAttributes']['invoice'])
-                                        client_name = session['ClientName']
-                                        total_amount = session['Amount']
-                                        response2 = client2.post_text(
-                                            botName='invoicetron',
-                                            botAlias='version',
-                                            userId=username,
-                                            inputText='create invoice for {} of total {}'.format(client_name,
-                                                                                                 total_amount)
-                                        )
+                                    if 'invoice' in response['sessionAttributes'].keys():
+                                        if response['sessionAttributes']['invoice']['ClientName'] == response['slots']['ClientName']:
+                                            session = json.loads(response['sessionAttributes']['invoice'])
+                                            client_name = session['ClientName']
+                                            total_amount = session['Amount']
+                                            response2 = client2.post_text(
+                                                botName='invoicetron',
+                                                botAlias='version',
+                                                userId=username,
+                                                inputText='create invoice for {} of total {}'.format(client_name,total_amount)
+                                            )
 
-                                        invoice_client = Customer.objects.filter(name__icontains=client_name).first()
+                                            invoice_client = Customer.objects.filter(name__icontains=client_name).first()
 
-                                        if response2['dialogState'] == 'ElicitSlot':
-                                            client.api_call('chat.postMessage', channel=event['channel'],
-                                                            text=response2['message'])
+                                            if response2['dialogState'] == 'ElicitSlot':
+                                                client.api_call('chat.postMessage', channel=event['channel'],
+                                                                text=response2['message'])
 
-                                        elif response2['dialogState'] == 'Fulfilled':
-                                            client.api_call('chat.postMessage', channel=event['channel'],
-                                                            text=response2['message'])
-                                            state.state = UserInteractionState.LINE_ITEM_DESCRIPTION_AWAITED
-                                            state.save()
-                                            message = 'Great! Almost there. You are invoicing {} of $ {}. \n' \
-                                                      'Now please enter the description.'.format(client_name,total_amount)
-                                            client.api_call('chat.postMessage', channel=event['channel'],
-                                                            text=message)
-                                            create_invoice(invoice_client, employee, total_amount)
+                                            elif response2['dialogState'] == 'Fulfilled':
+                                                client.api_call('chat.postMessage', channel=event['channel'],
+                                                                text=response2['message'])
+                                                state.state = UserInteractionState.LINE_ITEM_DESCRIPTION_AWAITED
+                                                state.save()
+                                                message = 'Great! Almost there. You are invoicing {} of $ {}. \n' \
+                                                          'Now please enter the description.'.format(client_name,total_amount)
+                                                client.api_call('chat.postMessage', channel=event['channel'],
+                                                                text=message)
+                                                create_invoice(invoice_client, employee, total_amount)
+                                        else:
+                                            pass
                                     else:
                                         pass
 

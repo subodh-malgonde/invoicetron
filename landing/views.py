@@ -158,6 +158,7 @@ def stripe_oauth(request):
     stripe_access_token = response.json().get('access_token')
     stripe_user_id = response.json().get('stripe_user_id')
     stripe_publish_key = response.json().get('stripe_publishable_key')
+
     # stripe_account = StripeAccountDetails.objects.filter(stripe_user_id=stripe_user_id).first()
     StripeAccountDetails.objects.create(team=team, stripe_access_token=stripe_access_token,
                                         stripe_user_id=stripe_user_id,

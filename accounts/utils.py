@@ -350,13 +350,15 @@ def build_message_for_help():
 
     return message
 
-def build_attachment_for_settings(team, company_name, company_logo):
+def build_attachment_for_settings(team, company_name=None, company_logo=None):
     company = Company.objects.get(name=team.slack_team_id)
+    print(company_name)
+    print(company_logo)
     attachment = {"title": "", "text": ""}
 
     attachment["callback_id"] = "settings:%d" % team.id
 
-    if company_name is False and company_logo is False:
+    if company_name is None and company_logo is None:
         fields = [
             {
                 "title": "You have not entered your company details",
@@ -364,7 +366,22 @@ def build_attachment_for_settings(team, company_name, company_logo):
                 "short": True
             }
         ]
-    else:
+    elif company_name is not None and company_logo is not None:
+
+        fields = [
+            {
+                "title": "Legal Name",
+                "value": company.company_name,
+                "short": True
+            },
+            {
+                "title": "Company Logo",
+                "value": '<%s|click here>' % company.company_logo.url,
+                "short": True
+            }
+    ]
+
+    elif company_name is not None and company_logo is None:
 
         fields = [
             {
@@ -372,16 +389,21 @@ def build_attachment_for_settings(team, company_name, company_logo):
                 "value": company.company_name,
                 "short": True
             }
-        # },
-        # {
-        #     "title": "Company Logo",
-        #     "value": "logo",
-        #     "short": True
-        # }
-    ]
+        ]
+    else:
+
+        fields = [
+            {
+                "title": "Company Logo",
+                "value": '<%s|click here>' % company.company_logo.url,
+                "short": True
+            }
+        ]
+
+
     attachment["fields"] = fields
 
-    if company_name is True and company_logo is True:
+    if company_name is not None and company_logo is not None:
 
         actions = [
             {
@@ -405,7 +427,7 @@ def build_attachment_for_settings(team, company_name, company_logo):
             }
         ]
 
-    elif company_name is True and company_logo is False:
+    elif company_name is not None and company_logo is None:
         actions = [
             {
                 "name": "settings",
@@ -428,7 +450,7 @@ def build_attachment_for_settings(team, company_name, company_logo):
             }
         ]
 
-    elif company_name is False and company_logo is True:
+    elif company_name is None and company_logo is not None:
         actions = [
             {
                 "name": "settings",

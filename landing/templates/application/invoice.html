@@ -5,6 +5,10 @@
       <title>Invoice</title>
 
       <style>
+          .image{
+              height: 100px;
+              width: 100px;
+          }
       .invoice-box{
           max-width:800px;
           margin:auto;
@@ -80,7 +84,7 @@
                       <table>
                           <tr>
                               <td class="title">
-                                  <img src="https://www.anaek.com/images/brand-logo.png" >
+                                  <img class="image" src={{ invoice.author.company.company_logo.url }}>
                               </td>
 
                               <td>
@@ -186,6 +190,9 @@
                   </form>
                   </td>
               </tr>
+          {% if charge_status != None %}
+              Your payment was {{ charge_status }}
+          {% endif %}
           </table>
       </div>
   </body>

@@ -76,6 +76,7 @@ def generate_invoice(request, invoice_id):
         payment_status = invoice.get_payment_status_display()
         payment_date = invoice.payment_date
         stripe_pub_key = settings.STRIPE_PUBLIC_KEY
+
         if payment_date:
             date = invoice.payment_date.date()
         else:
@@ -129,9 +130,14 @@ def generate_invoice(request, invoice_id):
                 payment_status = invoice.get_payment_status_display()
                 payment_date = invoice.payment_date.date()
 
-                return render(request, 'application/invoice.html',{'invoice': invoice, 'payment_status' : payment_status, 'payment_date' : payment_date})
+                charge_status = 'successful'
+                return render(request, 'application/invoice.html',{'invoice': invoice, 'payment_status' : payment_status, 'payment_date' : payment_date, 'charge_status': charge_status})
+            else:
+                charge_status = 'unsuccessful'
+                return render(request, 'application/invoice.html',{'charge_status': charge_status})
 
 def pdf_generation(request, invoice, payment_status, date):
+
     context = {'invoice': invoice, 'payment_status': payment_status, 'payment_date' : date}
     html_template ='application/invoice.html'
     template_string = render_to_string(html_template, context)

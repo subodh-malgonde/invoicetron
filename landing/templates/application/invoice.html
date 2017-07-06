@@ -6,8 +6,16 @@
 
       <style>
           .image{
-              height: 100px;
-              width: 100px;
+
+              display: block;
+              max-width:230px;
+              max-height:95px;
+              width: auto;
+              height: auto;
+
+{#              display:block;#}
+{#              height: 100px;#}
+{#              width: 100px;#}
           }
       .invoice-box{
           max-width:800px;
@@ -84,7 +92,12 @@
                       <table>
                           <tr>
                               <td class="title">
-                                  <img class="image" src={{ invoice.author.company.company_logo.url }}>
+                                  {% if invoice.author.company.company_logo.url != None  %}
+                                      <img class="image" src={{ invoice.author.company.company_logo.url }}>
+                                  {% else %}
+                                      Invoice
+                                  {% endif %}
+
                               </td>
 
                               <td>
@@ -102,7 +115,9 @@
                           <tr>
                               <td>
                                   From:<br>
-                                  {{ invoice.author.company.company_name }}<br>
+                                  {% if invoice.author.company.company_name != None  %}
+                                      {{ invoice.author.company.company_name }}<br>
+                                  {% endif %}
                                   <br>
 
                               </td>

@@ -4,31 +4,48 @@ from django.contrib.auth.models import User
 from slackclient import SlackClient
 
 
+def logo_upload_location(company, filename):
+    return "logos/%s-%s/%s" % (company.name, company.id, filename)
+
+
 class Company(models.Model):
     name = models.CharField(max_length=200)
     company_name = models.CharField(max_length=100, blank=True, null=True)
-    company_logo = models.ImageField(upload_to='', blank=True, null=True)
+    company_logo = models.ImageField(upload_to=logo_upload_location,max_length=250, blank=True, null=True)
     edited_details_awaited_from_for_company = models.ForeignKey('accounts.Employee', blank=True, null=True, related_name='company_name')
-
 
     def __str__(self):
         return self.name
 
-
     @classmethod
     def handle_team_settings(cls, json_data):
+        from landing.models import UserInteractionState
         company = Company.objects.get(name=json_data['team']['id'])
         selected_value = json_data['actions'][0]['value']
         attachments = None
 
         if selected_value == "logo":
+            employee = Employee.objects.filter(user__username= json_data['user']['id']).first()
             company_logo = company.company_logo
-            if company_logo is None:
-                response_message = 'You have not uploaded your company logo yet. \n' \
-                                   'Drag/drop a file. Supported file formats are jpeg/png'
+            print(company_logo)
+            if company_logo:
+                response_message = 'Please upload new logo.'
+                state = UserInteractionState.get_state_for_employee(employee)
+                state.state = UserInteractionState.COMPANY_LOGO_AWAITED
+                state.save()
+                company.edited_details_awaited_from_for_company = employee
+                company.save()
+
 
             else:
-                response_message = 'Here is your company logo'
+                state = UserInteractionState.get_state_for_employee(employee)
+                state.state = UserInteractionState.COMPANY_LOGO_AWAITED
+                state.save()
+                company.edited_details_awaited_from_for_company = employee
+                company.save()
+                response_message = 'You have not uploaded your company logo yet. \n' \
+                                   'Drag/drop a file. Supported file formats are jpg/jpeg/png'
+
 
         elif selected_value == "name":
 
@@ -56,15 +73,16 @@ class Company(models.Model):
 
             else:
                 response_message = 'You already have stripe account connected with your team'
-                name = False
-                logo = False
+
                 company_name = company.company_name
-                if company_name:
-                    name =True
+
                 company_logo = company.company_logo
-                if company_logo:
-                    logo = True
-                attachments = build_attachment_for_settings(team,company_name=name, company_logo=logo)
+
+                if not company_name:
+                    company_name = None
+                if not company_logo:
+                    company_logo = None
+                attachments = build_attachment_for_settings(team,company_name=company_name, company_logo=company_logo)
 
         return response_message, attachments
 

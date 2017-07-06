@@ -1,4 +1,6 @@
 import re
+
+import django_rq
 from django.core.paginator import Paginator
 from django.contrib.auth.models import User
 from accounts.models import Employee, Team, Customer, Company
@@ -20,31 +22,38 @@ def handle_slack_events(events):
 
 def handle_slack_event(event):
     if 'type' in event.keys() and event['type'] == 'message':
-        if 'subtype' in event.keys() and event['subtype'] == 'file_share':
-            message = 'Uploading your company logo. Please wait'
-            upload_logo()
-            pass
 
-        else:
+        if "user" in event.keys():
+            username = event['user']
+            team = Team.objects.filter(slack_team_id=event['team']).first()
+            company = Company.objects.get(name=team.slack_team_id)
+            client = SlackClient(team.slack_bot_access_token)
+            employee = Employee.objects.filter(user__username=username).first()
 
-            if "user" in event.keys():
-                username = event['user']
-                team = Team.objects.filter(slack_team_id=event['team']).first()
-                company = Company.objects.get(name=team.slack_team_id)
-                client = SlackClient(team.slack_bot_access_token)
-                employee = Employee.objects.filter(user__username=username).first()
+            if not employee:
+                response = client.api_call('users.info', user=username)
+                if response['ok']:
+                    user = User.objects.filter(username=username).first()
+                    if not user:
+                        user = User.objects.create(username=username)
+                    employee = Employee.objects.create(user=user, company=company,
+                                                       slack_username=response['user']['name'],
+                                                       slack_tz_label=response['user']['tz_label'],
+                                                       slack_tz=response['user']['tz'])
+            state = UserInteractionState.get_state_for_employee(employee)
+            if 'subtype' in event.keys() and event['subtype'] == 'file_share':
+                print(event)
+                if state.state == UserInteractionState.COMPANY_LOGO_AWAITED:
+                    company = Company.objects.filter(edited_details_awaited_from_for_company=employee).first()
+                    upload_logo(event)
+                    state.state = UserInteractionState.CHILLING
+                    state.save()
 
-                if not employee:
-                    response = client.api_call('users.info', user=username)
-                    if response['ok']:
-                        user = User.objects.filter(username=username).first()
-                        if not user:
-                            user = User.objects.create(username=username)
-                        employee = Employee.objects.create(user=user, company=company,
-                                                           slack_username=response['user']['name'],
-                                                           slack_tz_label=response['user']['tz_label'],
-                                                           slack_tz=response['user']['tz'])
-                state = UserInteractionState.get_state_for_employee(employee)
+                else:
+                    pass
+
+            else:
+
                 new_message = event['text']
                 wordlist = ['cancel', 'bye', 'quit', 'exit']
                 if new_message in wordlist:
@@ -54,7 +63,6 @@ def handle_slack_event(event):
                     state.save()
 
                 else:
-                    # state = UserInteractionState.get_state_for_employee(employee)
 
                     if state.state == UserInteractionState.CHILLING:
                         if '$' in new_message:
@@ -75,16 +83,16 @@ def handle_slack_event(event):
 
                                     owner = Team.objects.filter(owner=employee).first()
                                     if owner:
-                                        name = False
-                                        logo = False
                                         company_name = company.company_name
-                                        if company_name:
-                                            name = True
                                         company_logo = company.company_logo
-                                        if company_logo:
-                                            logo = True
+
+                                        if not company_name:
+                                            company_name=None
+                                        if not company_logo:
+                                            company_logo=None
+
                                         message = ''
-                                        attachments = build_attachment_for_settings(team, company_name=name, company_logo=logo)
+                                        attachments = build_attachment_for_settings(team, company_name=company_name,company_logo=company_logo)
                                         attachment_str = json.dumps(attachments)
                                         client.api_call('chat.postMessage', channel=event['channel'],
                                                         text=message, attachments=attachment_str)
@@ -96,7 +104,8 @@ def handle_slack_event(event):
                             elif response['intentName'] == 'create_invoice':
                                 if response['dialogState'] == 'ElicitSlot':
 
-                                    if response['slots']['ClientName'] is not None and response['slots']['Amount'] is not None:
+                                    if response['slots']['ClientName'] is not None and response['slots'][
+                                        'Amount'] is not None:
 
                                         amount = response['slots']['Amount']
                                         name_of_client = response['slots']['ClientName']
@@ -118,7 +127,8 @@ def handle_slack_event(event):
                                         else:
                                             client.api_call('chat.postMessage', channel=event['channel'],
                                                             text=response['message'])
-                                    elif response['slots']['ClientName'] is not None and response['slots']['Amount'] is None:
+                                    elif response['slots']['ClientName'] is not None and response['slots'][
+                                        'Amount'] is None:
 
                                         name_of_client = response['slots']['ClientName']
                                         invoice_client = Customer.objects.filter(name__icontains=name_of_client).first()
@@ -177,14 +187,15 @@ def handle_slack_event(event):
                                         state.state = UserInteractionState.LINE_ITEM_DESCRIPTION_AWAITED
                                         state.save()
                                         message = 'Great! Almost there. You are invoicing {} of $ {}. \n' \
-                                                  'Now please enter the description.'.format(name_of_client,amount)
+                                                  'Now please enter the description.'.format(name_of_client, amount)
                                         client.api_call('chat.postMessage', channel=event['channel'],
                                                         text=message)
                                         create_invoice(invoice_client, employee, amount)
 
                             elif response['intentName'] == 'create_client':
                                 if response['dialogState'] == 'ElicitSlot':
-                                    if response['slots']['ClientName'] is not None and response['slotToElicit'] == 'ClientEmail':
+                                    if response['slots']['ClientName'] is not None and response[
+                                        'slotToElicit'] == 'ClientEmail':
                                         name_of_client = response['slots']['ClientName']
                                         customer = Customer.objects.filter(name__icontains=name_of_client).first()
                                         if not customer:
@@ -212,7 +223,8 @@ def handle_slack_event(event):
                                     client.api_call('chat.postMessage', channel=event['channel'],
                                                     text=response['message'], attachments=attachment_str)
                                     if 'invoice' in response['sessionAttributes'].keys():
-                                        if response['sessionAttributes']['invoice']['ClientName'] == response['slots']['ClientName']:
+                                        if response['sessionAttributes']['invoice']['ClientName'] == response['slots'][
+                                            'ClientName']:
                                             session = json.loads(response['sessionAttributes']['invoice'])
                                             client_name = session['ClientName']
                                             total_amount = session['Amount']
@@ -220,7 +232,8 @@ def handle_slack_event(event):
                                                 botName='invoicetron',
                                                 botAlias='version',
                                                 userId=username,
-                                                inputText='create invoice for {} of total {}'.format(client_name,total_amount)
+                                                inputText='create invoice for {} of total {}'.format(client_name,
+                                                                                                     total_amount)
                                             )
 
                                             invoice_client = Customer.objects.filter(name__icontains=client_name).first()
@@ -235,7 +248,8 @@ def handle_slack_event(event):
                                                 state.state = UserInteractionState.LINE_ITEM_DESCRIPTION_AWAITED
                                                 state.save()
                                                 message = 'Great! Almost there. You are invoicing {} of $ {}. \n' \
-                                                          'Now please enter the description.'.format(client_name,total_amount)
+                                                          'Now please enter the description.'.format(client_name,
+                                                                                                     total_amount)
                                                 client.api_call('chat.postMessage', channel=event['channel'],
                                                                 text=message)
                                                 create_invoice(invoice_client, employee, total_amount)
@@ -249,21 +263,24 @@ def handle_slack_event(event):
                                     message = ''
                                     attachments = None
                                     if response['slots']['Paid'] == None and response['slots']['Sent'] == None:
-                                        message, attachments = list_invoices(employee, team, page=1, payment_status=None, sent_status=None)
+                                        message, attachments = list_invoices(employee, team, page=1, payment_status=None,
+                                                                             sent_status=None)
                                     elif response['slots']['Paid'] is not None and response['slots']['Sent'] == None:
                                         payment_status = response['slots']['Paid']
-                                        message, attachments = list_invoices(employee, team, page=1, payment_status=payment_status,
-                                                      sent_status=None)
+                                        message, attachments = list_invoices(employee, team, page=1,
+                                                                             payment_status=payment_status,
+                                                                             sent_status=None)
                                     elif response['slots']['Paid'] == None and response['slots']['Sent'] is not None:
                                         sent_status = response['slots']['Sent']
                                         message, attachments = list_invoices(employee, team, page=1, payment_status=None,
-                                                      sent_status=sent_status)
+                                                                             sent_status=sent_status)
                                     elif response['slots']['Paid'] is not None and response['slots'][
                                         'Sent'] is not None:
                                         payment_status = response['slots']['Paid']
                                         sent_status = response['slots']['Sent']
-                                        message, attachments = list_invoices(employee, team, page=1, payment_status=payment_status,
-                                                      sent_status=sent_status)
+                                        message, attachments = list_invoices(employee, team, page=1,
+                                                                             payment_status=payment_status,
+                                                                             sent_status=sent_status)
 
                                     send_message_to_user(message=message, employee=employee, team=team,
                                                          attachments=attachments)
@@ -281,7 +298,7 @@ def handle_slack_event(event):
 
                             else:
                                 message = " :x: I am afraid I did not understand. Please type `help` to know more about me.\n" \
-                                        "What are you looking for?"
+                                          "What are you looking for?"
                                 attachments = build_attachment_for_error()
                                 attachment_str = json.dumps(attachments)
 
@@ -355,16 +372,16 @@ def handle_slack_event(event):
 
                         state.state = UserInteractionState.CHILLING
                         state.save()
-                        name = False
-                        logo = False
+
                         company_name = company.company_name
-                        if company_name:
-                            name = True
+
                         company_logo = company.company_logo
-                        if company_logo:
-                            logo = True
+                        if not company_name:
+                            company_name = None
+                        if not company_logo:
+                            company_logo = None
                         message = "Great!"
-                        attachments = build_attachment_for_settings(team, company_name=name, company_logo=logo)
+                        attachments = build_attachment_for_settings(team, company_name=company_name, company_logo=company_logo)
                         send_message_to_user(message, employee, team, attachments)
 
                     elif state.state == UserInteractionState.CLIENT_NAME_AWAITED:
@@ -500,5 +517,92 @@ def call_lex_for_creating_client(username, json_data, channel_id):
 
     send_message_to_user(message=response['message'], employee=employee, team=team, channel_id=channel_id)
 
-def upload_logo():
-    pass
+def upload_logo(event):
+
+    if "url_private_download" not in event['file']:
+        print("Ignoring as no downloadable file found")
+        return
+
+    else:
+        file_details = event['file']
+        team = Team.objects.filter(slack_team_id=event['team']).first()
+        employee = Employee.objects.filter(user__username=event['user']).first()
+        company = employee.company
+        valid_file = False
+        if file_details:
+            # event_team = event['file']['url_private_download'].split('/files-pri/')[1].split('-')[0]
+            if "url_private_download" not in file_details:
+                message = "I am sorry I cannot read external files. Please drag and drop a file here."
+                return send_message_to_user(message=message, employee=employee,team=team)
+
+            if file_details['filetype'] in ('png', 'jpg', 'jpeg'):
+                valid_file = True
+
+            if valid_file:
+                # return save_receipt_for_expense(expense, file_details['url_private_download'], team_bot)
+                queue = django_rq.get_queue('high')
+                queue.enqueue("landing.utils.save_logo", file_details['url_private_download'], team, company, employee)
+                message = 'Your company logo is being saved. Please wait'
+                send_message_to_user(message=message, employee=employee, team=team)
+                print(valid_file)
+            else:
+                message = 'Please upload `png` `jpg` `jpeg` type of files only'
+                send_message_to_user(message=message, employee=employee, team=team)
+
+
+def save_logo(url, team, company, employee):
+
+    from django.core.files.base import ContentFile
+    import requests
+
+
+    headers = {'Authorization': 'Bearer %s' % team.slack_bot_access_token}
+    image_content = ContentFile(requests.get(url, headers=headers).content)
+    company.company_logo.save(url.split("/")[-1], image_content)
+
+    message = 'Your company logo is saved.'
+    company.edited_details_awaited_from_for_company = None
+    company.save()
+    company_name = company.company_name
+    company_logo = company.company_logo
+    if not company_name:
+        company_name = None
+    if not company_logo:
+        company_logo = None
+    attachments = build_attachment_for_settings(team=team, company_name=company_name, company_logo=company_logo)
+    send_message_to_user(message=message, employee=employee, team=team, attachments=attachments)
+
+
+
+
+event = {'channel': 'D5WC1TV0V',
+ 'bot_id': None,
+ 'user_team': 'T5M4SAEBY',
+ 'subtype': 'file_share',
+ 'text': '<@U5WAKNTC4|shahtanmay69> uploaded a file: <https://attendancebot.slack.com/files/shahtanmay69/F644LQJH2/screenshot_from_2017-06-26_19-25-25.png|Screenshot from 2017-06-26 19-25-25.png>',
+ 'event_ts': '1499262368.799779',
+ 'ts': '1499262368.799779',
+ 'source_team': 'T5M4SAEBY',
+ 'username': 'shahtanmay69',
+ 'upload': True,
+ 'type': 'message',
+ 'user_profile': {'real_name': 'ironman',
+                  'first_name': 'ironman',
+                  'current_status': None,
+                  'name': 'shahtanmay69',
+                  'image_72': 'https://secure.gravatar.com/avatar/77ab8e21112019951896728e52e01ac1.jpg?s=72&d=https%3A%2F%2Fa.slack-edge.com%2F66f9%2Fimg%2Favatars%2Fava_0026-72.png',
+                  'avatar_hash': 'g77ab8e21112'
+                  },
+ 'file': {'thumb_160': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_160.png',
+          'ims': [],
+          'thumb_800': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_800.png',
+          'thumb_960_w': 960,
+          'thumb_1024_w': 1024,
+          'mode': 'hosted',
+          'thumb_720_h': 355,
+          'user': 'U5WAKNTC4',
+          'original_w': 1295, 'url_private': 'https://files.slack.com/files-pri/T5M4SAEBY-F644LQJH2/screenshot_from_2017-06-26_19-25-25.png', 'display_as_bot': False, 'thumb_480_h': 237, 'size': 141678, 'name': 'Screenshot from 2017-06-26 19-25-25.png', 'original_h': 639, 'thumb_480': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_480.png', 'thumb_360_w': 360, 'thumb_800_h': 395, 'thumb_1024_h': 505, 'permalink_public': 'https://slack-files.com/T5M4SAEBY-F644LQJH2-1593e7a978', 'editable': False, 'title': 'Screenshot from 2017-06-26 19-25-25.png', 'thumb_960': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_960.png', 'thumb_720': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_720.png', 'public_url_shared': False, 'url_private_download': 'https://files.slack.com/files-pri/T5M4SAEBY-F644LQJH2/download/screenshot_from_2017-06-26_19-25-25.png', 'thumb_80': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_80.png', 'timestamp': 1499262364, 'username': '', 'image_exif_rotation': 1, 'filetype': 'png', 'permalink': 'https://attendancebot.slack.com/files/shahtanmay69/F644LQJH2/screenshot_from_2017-06-26_19-25-25.png', 'is_public': False, 'thumb_360': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_360.png', 'is_external': False, 'mimetype': 'image/png', 'thumb_1024': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_1024.png', 'thumb_800_w': 800, 'channels': [], 'id': 'F644LQJH2', 'pretty_type': 'PNG', 'external_type': '', 'groups': [], 'thumb_720_w': 720, 'created': 1499262364, 'thumb_480_w': 480, 'thumb_360_h': 178, 'comments_count': 0, 'thumb_960_h': 474, 'thumb_64': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_64.png'},
+ 'user': 'U5WAKNTC4',
+ 'team': 'T5M4SAEBY',
+ 'display_as_bot': False
+ }

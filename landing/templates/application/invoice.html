@@ -5,6 +5,18 @@
       <title>Invoice</title>
 
       <style>
+          .image{
+
+              display: block;
+              max-width:230px;
+              max-height:95px;
+              width: auto;
+              height: auto;
+
+{#              display:block;#}
+{#              height: 100px;#}
+{#              width: 100px;#}
+          }
       .invoice-box{
           max-width:800px;
           margin:auto;
@@ -80,7 +92,12 @@
                       <table>
                           <tr>
                               <td class="title">
-                                  <img src="https://www.anaek.com/images/brand-logo.png" >
+                                  {% if invoice.author.company.company_logo.url != None  %}
+                                      <img class="image" src={{ invoice.author.company.company_logo.url }}>
+                                  {% else %}
+                                      Invoice
+                                  {% endif %}
+
                               </td>
 
                               <td>
@@ -98,7 +115,9 @@
                           <tr>
                               <td>
                                   From:<br>
-                                  {{ invoice.author.company.company_name }}<br>
+                                  {% if invoice.author.company.company_name != None  %}
+                                      {{ invoice.author.company.company_name }}<br>
+                                  {% endif %}
                                   <br>
 
                               </td>
@@ -186,6 +205,9 @@
                   </form>
                   </td>
               </tr>
+          {% if charge_status != None %}
+              Your payment was {{ charge_status }}
+          {% endif %}
           </table>
       </div>
   </body>

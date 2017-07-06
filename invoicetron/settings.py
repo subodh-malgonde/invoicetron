@@ -139,10 +139,10 @@ AWS_STORAGE_BUCKET_NAME = os.environ['AWS_STORAGE_BUCKET_NAME']
 # AWS_ACCESS_KEY_ID = 'AKIAICVKIYLSRC3OJMKA'
 # AWS_SECRET_ACCESS_KEY = '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'
 # AWS_STORAGE_BUCKET_NAME = 'snowball-assetsdev'
-
-AWS_HEADERS = {
-  'Cache-Control': 'max-age=86400',
-}
+#
+# AWS_HEADERS = {
+#   'Cache-Control': 'max-age=86400',
+# }
 
 AWS_QUERYSTRING_AUTH = False
 

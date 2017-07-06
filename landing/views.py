@@ -22,13 +22,8 @@ from actions.models import Invoice, LineItem
 
 @csrf_exempt
 def post_list(request):
-    if request.method == "GET":
-        response = {"status": "GET request"}
-    else:
-        print(request.body)
-        data = request.body.decode('utf-8')
-        response = json.loads(data)
-    return JsonResponse(response)
+    client_id = settings.SLACK_CLIENT_ID
+    return render(request, 'website/index.html', {'client_id': client_id})
 
 @csrf_exempt
 def slack_hook(request):
@@ -173,9 +168,9 @@ def stripe_oauth(request):
                                      'Type `create invoice` to start invoicing or client', employee=employee, team=team)
     return render(request, 'application/after_connection.html')
 
-def index(request):
-    client_id = settings.SLACK_CLIENT_ID
-    return render(request, 'application/install.html', {'client_id': client_id})
+# def index(request):
+#     client_id = settings.SLACK_CLIENT_ID
+#     return render(request, 'application/install.html', {'client_id': client_id})
 
 def slack_oauth(request):
 
@@ -196,7 +191,7 @@ def slack_oauth(request):
         employee,team = Employee.consume_slack_data(data)
 
         send_message_to_user(message="Hi. Welcome to Invoicetron", employee=employee, team=team)
-        return render(request, 'application/after_installing.html')
+        return render(request, 'website/adminbot_post_add_slack.html')
 
 
 

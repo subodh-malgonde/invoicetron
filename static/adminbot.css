@@ -220,7 +220,7 @@ fieldset[disabled] .btn-xl.active {
   border-color: transparent;
 }
 .navbar-custom .navbar-brand {
-  color: white;
+  color: #ff3300;
   font-family: "Montserrat", "Helvetica Neue", Helvetica, Arial, cursive;
 }
 .navbar-custom .navbar-brand:hover,
@@ -296,7 +296,7 @@ fieldset[disabled] .btn-xl.active {
   }
 }
 .background_container{
-  background-image: url('/static/assets/img/camera.jpg');
+  background-image: url('/static/images/pricing.jpeg');
   background-repeat: no-repeat;
   background-attachment: scroll;
   background-position: center center;
@@ -307,7 +307,7 @@ fieldset[disabled] .btn-xl.active {
 }
 header {
   text-align: center;
-  color: white;
+  color: white ;
 }
 header .intro-text {
   margin-bottom: 80px;
@@ -317,7 +317,7 @@ header .intro-text .intro-lead-in {
   font-size: 16px;
   line-height: 35px;
   margin-bottom: 25px;
-  color: #F7F6F9;
+  color: white;
 }
 header .intro-text .intro-heading {
   font-family: "Montserrat", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -339,7 +339,7 @@ header .intro-text .intro-heading {
     font-size: 26px;
     line-height: 35px;
     margin-bottom: 50px;
-    color: #F7F6F9;
+    color: white;
   }
   header .intro-text .intro-heading {
     font-family: "Montserrat", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -627,7 +627,7 @@ aside.clients img {
   margin: 50px auto;
 }
 section#pricing {
-  background-image: url('/static/assets/img/pricing-bg.jpg');
+  background-image: url('/static/images/pricing.jpeg');
   /* background-color: #222222; */
   background-position: center;
   background-repeat: no-repeat;
@@ -856,8 +856,8 @@ body {
  @font-face { 
   font-family: 'Montserrat-Light'; 
   src:local('Montserrat-Light'),
-      local('Montserrat-Light'), 
-      url('../fonts/Montserrat-Light.ttf') format('truetype');
+      local('Montserrat-Light');
+      /*url('../fonts/Montserrat-Light.ttf') format('truetype');*/
 }
 .slack-img {
     width: 50px;

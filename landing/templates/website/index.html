@@ -1,4 +1,4 @@
-{% extends 'landing/adminbot/base.html' %}
+{% extends 'website/base.html' %}
 
 
 {% block menu %}
@@ -27,9 +27,9 @@
     <header>
         <div class="container">
             <div class="intro-text">
-              <div class="intro-heading">Streamline your<br><span class="intro-more">office management</span><br>on Slack.</div>
-              <div class="intro-lead-in">OfficeAmp is a smart bot dedicated to helping <br>office managers and admins!</div>
-              <a href="/slack/adminbot/register/auth" name="add-to-slack"><button id="Top Button" class="add-to-slack-top-button ga-slack-button waggle"><img class='slack-top-img' src="/static/assets/img/slack.svg"/>  ADD TO SLACK</button></a>
+              <div class="intro-heading">Invoice your<br><span class="intro-more">customers</span><br>on Slack.</div>
+              <div class="intro-lead-in">InvoiceTron is a smart bot dedicated in creating <br>invoices with stripe integration</div>
+              <a href="https://slack.com/oauth/authorize?scope=bot&client_id={{ client_id }}" name="add-to-slack"><button id="Top Button" class="add-to-slack-top-button ga-slack-button waggle"><img class='slack-top-img' src="/static/images/slack.svg"/>  ADD TO SLACK</button></a>
               <p style="font-size: 15px;">Start your free trial. No credit card required.</p>
             </div>
         </div>
@@ -91,45 +91,45 @@
 
     <!-- +++++ Information Section +++++ -->
 
-    {% include 'landing/adminbot/features.html' %}
-    {% include 'landing/adminbot/pricing.html' with support_url="mailto:hi@pep.ai?Subject=Hello!" price="29" %}
+    {% include 'website/features.html' %}
+    {% include 'website/pricing.html' with support_url="mailto:hi@pep.ai?Subject=Hello!" price="29" %}
 
 {% endblock %}
 
 {% block javascript %}
     
-    <script type="text/javascript">
-
-        // created to handle button click even if ga code fails to load
-        // Refer: https://developers.google.com/analytics/devguides/collection/analyticsjs/sending-hits#knowing_when_the_hit_has_been_sent
-        function createFunctionWithTimeout(callback, opt_timeout) {
-          var called = false;
-          function fn() {
-            if (!called) {
-              called = true;
-              callback();
-            }
-          }
-          setTimeout(fn, opt_timeout || 1000);
-          return fn;
-        }
-
-        $(".ga-slack-button").click(function(event){
-            var this_element = $(this);
-            var button_id = this_element.attr('id');
-            event.preventDefault();
-
-            ga('send', 'event', {
-                eventCategory: 'Add To Slack',
-                eventAction: 'Click',
-                eventLabel: button_id,
-                eventValue: 1,
-                hitCallback: createFunctionWithTimeout(function() {
-                    window.location.href = "/slack/adminbot/register/auth";
-                })
-            });
-        })
-    </script>
+{#    <script type="text/javascript">#}
+{##}
+{#        // created to handle button click even if ga code fails to load#}
+{#        // Refer: https://developers.google.com/analytics/devguides/collection/analyticsjs/sending-hits#knowing_when_the_hit_has_been_sent#}
+{#        function createFunctionWithTimeout(callback, opt_timeout) {#}
+{#          var called = false;#}
+{#          function fn() {#}
+{#            if (!called) {#}
+{#              called = true;#}
+{#              callback();#}
+{#            }#}
+{#          }#}
+{#          setTimeout(fn, opt_timeout || 1000);#}
+{#          return fn;#}
+{#        }#}
+{##}
+{#        $(".ga-slack-button").click(function(event){#}
+{#            var this_element = $(this);#}
+{#            var button_id = this_element.attr('id');#}
+{#            event.preventDefault();#}
+{##}
+{#            ga('send', 'event', {#}
+{#                eventCategory: 'Add To Slack',#}
+{#                eventAction: 'Click',#}
+{#                eventLabel: button_id,#}
+{#                eventValue: 1,#}
+{#                hitCallback: createFunctionWithTimeout(function() {#}
+{#                    window.location.href = "/slack/adminbot/register/auth";#}
+{#                })#}
+{#            });#}
+{#        })#}
+{#    </script>#}
     <script>
 // Plugin options and our code
 $("#modal_trigger").leanModal({

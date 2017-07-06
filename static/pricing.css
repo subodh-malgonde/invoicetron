@@ -1,0 +1,276 @@
+a {
+  text-decoration: none;
+}
+
+.purchase {
+  /* border-top:11px solid #E85700; */
+  /* padding:89px 0 0; */
+  padding:0 0 0;
+  text-align:center;
+  font-family: "Montserrat";
+}
+.purchase h1 {
+  font-size:26px;
+  letter-spacing:3px;
+  line-height:40px;
+  text-transform:uppercase;
+}
+.purchase p {
+  font-size: 26px;
+  line-height: 45px;
+  max-width:750px;
+  margin:0 auto;
+}
+.purchase-trigger {
+  margin-top:50px;
+  border:1px solid #E85700;
+  border-radius:50px;
+  font-size:26px;
+  display:inline-block;
+  cursor:pointer;
+  position:relative;
+}
+
+.purchase-trigger * {
+  -webkit-transition: 0.3s cubic-bezier(0.540, 1.410, 0.540, 0.870);
+  -moz-transition: 0.3s cubic-bezier(0.540, 1.410, 0.540, 0.870);
+  -o-transition: 0.3s cubic-bezier(0.540, 1.410, 0.540, 0.870);
+  transition: 0.3s cubic-bezier(0.540, 1.410, 0.540, 0.870);
+
+  -webkit-transition: 0.4s cubic-bezier(0.165, 0.925, 0.510, 1.005);
+  -moz-transition: 0.4s cubic-bezier(0.165, 0.925, 0.510, 1.005);
+  -o-transition: 0.4s cubic-bezier(0.165, 0.925, 0.510, 1.005);
+  transition: 0.4s cubic-bezier(0.165, 0.925, 0.510, 1.005);
+
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+.purchase-trigger span {
+  padding:17px 80px;	
+  color:#E85700;
+  width:246px;
+  display: inline-block;
+}
+.purchase-trigger .bubble {
+  position:absolute;
+  background:#E85700;
+  top:0;
+  border-radius:50px;
+  left:0;
+  height:74px;
+  width: 246px;
+  z-index:-1;
+}
+.purchase-trigger.right .bubble {
+  margin-left:246px;	
+}
+
+.purchase-trigger:not(.right) .annual {
+  color:#fff;
+}
+.purchase-trigger.right .monthly {
+  color:#fff;
+}
+
+.purchase ul {
+  display:table;
+  margin:10px auto 0;
+  width:100%;
+  width:1000px;
+}
+.purchase li {
+  display:table-cell;
+  width:33.333%;
+  padding:43px 0 0;
+  -webkit-transition: 0;
+  -webkit-transition: all 0.25s, color 0s !important;
+  -moz-transition: all 0.25s, color 0s !important;
+  -o-transition: all 0.25s, color 0s !important;
+  transition: all 0.25s, color 0s !important;
+  position:relative;
+  z-index:0;
+  /*border:1px solid #BBB; */
+  background-color:#FFFFFF;
+}
+
+.purchase li:first-child {
+  position:relative;
+  right:-1px;
+  border-top-left-radius: 20px;
+  border-bottom-left-radius: 20px;
+  border-right:2px solid #EBEBEB;
+}
+.purchase li:last-child {
+  position:relative;
+  left:-1px;
+  border-top-right-radius: 20px;
+  border-bottom-right-radius: 20px;
+  border-left:1px solid #EBEBEB;
+}
+
+
+.purchase li:hover {
+  box-shadow: 0 13px 48px rgba(0, 0, 0, 0.2);
+  z-index:1;
+  color:#303030;
+  background:#D2E3DC;
+  border-color:#D2E3DC;
+  -webkit-transform:scale(1.05);
+  border-radius: 0px;
+}
+
+.purchase li * {
+  -webkit-transition: 0 !important;
+  -moz-transition: 0 !important;
+  -o-transition: 0 !important;
+  transition: 0 !important;
+}
+
+.purchase li:hover * {
+  border-color:rgba(255, 255, 255, 0.27) !important;
+}
+
+
+
+.purchase li strong {
+  font-size:19px;
+  text-transform:uppercase;
+  color:#2F3740;
+  letter-spacing:2.4px;
+  line-height:45px;
+  font-weight:400;
+  display: inline-block;
+}
+
+.purchase ul .purchase-description {
+  display:block;
+  font-size:19px;
+  line-height:30px;
+}
+
+.purchase ul .purchase-description1 {
+  display:block;
+  font-size:14px;
+  line-height:30px;
+  height: 20px;
+  color: #838383;
+}
+
+.purchase ul .purchase-description2 {
+  display:block;
+  font-size:16px;
+  line-height:30px;
+  height: 20px;
+  color: #303030;
+  margin-top: 20px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.purchase ul .purchase-description3 {
+  font-family: "Montserrat-Light", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  display:block;
+  font-size:19px;
+  line-height:20px;
+  height: 125px;
+  color: #303030;
+  margin-left: 50px;
+  margin-right: 50px;
+  font-weight: 300;
+}
+
+.purchase .purchase-price {
+  font-size:125px;
+  letter-spacing:2px;
+  display:block;
+  font-weight:400;
+  height: 200px;
+}
+
+.purchase .purchase-price-sign {
+  font-size:45px;
+  letter-spacing:2px;
+  font-weight:400;
+  font-family: "Montserrat";
+  color: #A2A2A2;
+  float: left;
+  padding-left: 100px;
+  padding-top: 34px;
+}
+
+.purchase .purchase-value {
+  font-size:136px;
+  letter-spacing:2px;
+  font-weight:400;
+  font-family: "droid serif";
+  font-style: italic;
+  float: right;
+  padding-right: 110px;
+}
+
+.purchase .purchase-talk-to-us {
+  font-size:68px;
+  letter-spacing:2px;
+  display:block;
+  font-weight:400;
+  font-family: "droid serif";
+  font-style: italic;
+  height: 200px;
+  padding-top: 37px;
+  line-height: 58px;
+}
+.purchase .purchase-button {
+  text-transform:uppercase;
+  font-size:19px;
+  color:#2F3740;
+  text-decoration:none;
+  line-height:1;
+  padding:28px 0 24px;
+  width:100%;
+  display:inline-block;
+  margin-top:6px;
+  display:block;
+}
+.purchase li:hover .purchase-button {
+
+  -webkit-transition: 0;
+  -moz-transition: 0;
+  -o-transition: 0;
+  transition: 0;
+}
+
+
+.purchase ul a:hover {
+  color:white;
+}
+
+.purchase ul a, .purchase ul a:hover .purchase-price, .purchase ul a:hover .purchase-description {
+  color:white;
+}
+
+.purchase .button {
+    background-color: #F42267;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 30px;
+    width: 15em;
+    height: 50px;
+    letter-spacing: 4px;
+}
+
+.purchase li:hover .button {
+  background-color: #30CE91;
+  color: white;
+}
+

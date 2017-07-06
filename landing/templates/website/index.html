@@ -1,0 +1,178 @@
+{% extends 'landing/adminbot/base.html' %}
+
+
+{% block menu %}
+<!-- Collect the nav links, forms, and other content for toggling -->
+<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+  <ul class="nav navbar-nav navbar-right menu_links">
+    <li class="hidden">
+      <a href="#page-top"></a>
+    </li>
+    <li>
+      <a class="page-scroll" href="#features">Features</a>
+    </li>
+    <li id="pricing_nav">
+      <a class="page-scroll" href="#pricing">Pricing</a>
+    </li>
+    <li>
+      <a href="https://officeamp.freshdesk.com/support/home" target="_blank">Support</a>
+    </li>
+  </ul>
+</div>
+<!-- /.navbar-collapse -->
+{% endblock %}
+
+{% block background_container_element %}
+    <!-- +++++ Welcome Section +++++ -->
+    <header>
+        <div class="container">
+            <div class="intro-text">
+              <div class="intro-heading">Streamline your<br><span class="intro-more">office management</span><br>on Slack.</div>
+              <div class="intro-lead-in">OfficeAmp is a smart bot dedicated to helping <br>office managers and admins!</div>
+              <a href="/slack/adminbot/register/auth" name="add-to-slack"><button id="Top Button" class="add-to-slack-top-button ga-slack-button waggle"><img class='slack-top-img' src="/static/assets/img/slack.svg"/>  ADD TO SLACK</button></a>
+              <p style="font-size: 15px;">Start your free trial. No credit card required.</p>
+            </div>
+        </div>
+    </header>
+{% endblock %}
+
+{% block content %}
+
+    <style type="text/css">
+        .h-divider{
+             margin-top:5px;
+             margin-bottom:5px;
+             height:1px;
+             width:100%;
+             border-top:1px solid gray;
+        }
+
+        .mt {
+            margin-top: 40px;
+            margin-bottom: 40px;
+        }
+
+        .pt {
+            padding-top: 50px;
+            padding-bottom: 50px;
+        }
+        .pricing-container {
+            border: 0;
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 0 4px rgba(0,0,0,0.15);
+            margin: 0 auto;
+            width: 75%;
+        }
+        .pricing-h1 {
+            text-align: center;
+            line-height: 1.2;
+            margin-bottom: 0.5em;
+            text-transform: none;
+            margin-top: 40px;
+            font-size: 31px;
+        }
+        .pricing-p {
+            font-family: "Montserrat-Light", "Helvetica Neue", Helvetica, Arial, sans-serif;
+              font-size: 17px;
+            margin-top: 35px;
+
+        }
+        .pricing-hr {
+              margin: 3em auto;
+            width: 40%;
+        }
+        .pricing-h2 {
+            text-transform: none;
+        }
+    </style>
+
+
+
+    <!-- +++++ Information Section +++++ -->
+
+    {% include 'landing/adminbot/features.html' %}
+    {% include 'landing/adminbot/pricing.html' with support_url="mailto:hi@pep.ai?Subject=Hello!" price="29" %}
+
+{% endblock %}
+
+{% block javascript %}
+    
+    <script type="text/javascript">
+
+        // created to handle button click even if ga code fails to load
+        // Refer: https://developers.google.com/analytics/devguides/collection/analyticsjs/sending-hits#knowing_when_the_hit_has_been_sent
+        function createFunctionWithTimeout(callback, opt_timeout) {
+          var called = false;
+          function fn() {
+            if (!called) {
+              called = true;
+              callback();
+            }
+          }
+          setTimeout(fn, opt_timeout || 1000);
+          return fn;
+        }
+
+        $(".ga-slack-button").click(function(event){
+            var this_element = $(this);
+            var button_id = this_element.attr('id');
+            event.preventDefault();
+
+            ga('send', 'event', {
+                eventCategory: 'Add To Slack',
+                eventAction: 'Click',
+                eventLabel: button_id,
+                eventValue: 1,
+                hitCallback: createFunctionWithTimeout(function() {
+                    window.location.href = "/slack/adminbot/register/auth";
+                })
+            });
+        })
+    </script>
+    <script>
+// Plugin options and our code
+$("#modal_trigger").leanModal({
+  top: 100,
+  overlay: 0.6,
+  closeButton: ".modal_close"
+});
+
+$(function() {
+  // Going back to Social Forms
+  $(".back_btn").click(function() {
+    $(".social_login").show();
+    $(".header_title").text('Login');
+    return false;
+  });
+});
+    </script>
+
+            <script>
+    $('#email_form').on('submit',function(e){
+        var email = encodeURIComponent($('#email').val());
+        var name = encodeURIComponent($('#name').val());
+        var number = encodeURIComponent($('#number').val());
+        var company_size = encodeURIComponent($('#company_size').val());
+        var company_name = encodeURIComponent($('#company_name').val());
+        var baseURL = 'https://docs.google.com/a/pep.ai/forms/d/1hzusylxOPuqPOn6vThzmjnsoOHfH6FpPlyZYVOp2TeY/formResponse?entry.1567353866=';
+        var emailURL = '&entry.1264277597=' + email
+        var numberURL = '&entry.1342667713=' + number
+        var companySizeURL = '&entry.715906262=' + company_size
+        var companyNameURL = '&entry.290689043=' + company_name
+        $.ajax({
+          url: (baseURL + name + emailURL + numberURL + companySizeURL + companyNameURL),
+          type: 'POST',
+          statusCode: {
+              0: function (){
+                  $('.popupBody').html('Thank You! Our customer success ninja will reach out to you soon.');
+                },
+              200: function (){
+                  $('.popupBody').html('Thank You! Our customer success ninja will reach out to you soon.');
+                }
+          }
+        });
+        e.preventDefault();
+      });
+    </script>
+{% endblock %}

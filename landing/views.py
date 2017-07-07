@@ -166,11 +166,9 @@ def stripe_oauth(request):
                                         stripe_publish_key=stripe_publish_key)
     send_message_to_user(message='Your stripe account was successfully connected.\n'
                                      'Type `create invoice` to start invoicing or client', employee=employee, team=team)
-    return render(request, 'application/after_connection.html')
+    return render(request, 'website/post_connecting_stripe.html')
 
-# def index(request):
-#     client_id = settings.SLACK_CLIENT_ID
-#     return render(request, 'application/install.html', {'client_id': client_id})
+
 
 def slack_oauth(request):
 

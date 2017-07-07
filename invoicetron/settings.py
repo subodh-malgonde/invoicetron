@@ -138,6 +138,7 @@ AWS_STORAGE_BUCKET_NAME = os.environ['AWS_STORAGE_BUCKET_NAME']
 
 
 
+
 AWS_HEADERS = {
   'Cache-Control': 'max-age=86400',
 }

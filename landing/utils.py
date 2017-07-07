@@ -104,8 +104,7 @@ def handle_slack_event(event):
                             elif response['intentName'] == 'create_invoice':
                                 if response['dialogState'] == 'ElicitSlot':
 
-                                    if response['slots']['ClientName'] is not None and response['slots'][
-                                        'Amount'] is not None:
+                                    if response['slots']['ClientName'] is not None and response['slots']['Amount'] is not None:
 
                                         amount = response['slots']['Amount']
                                         name_of_client = response['slots']['ClientName']
@@ -127,8 +126,7 @@ def handle_slack_event(event):
                                         else:
                                             client.api_call('chat.postMessage', channel=event['channel'],
                                                             text=response['message'])
-                                    elif response['slots']['ClientName'] is not None and response['slots'][
-                                        'Amount'] is None:
+                                    elif response['slots']['ClientName'] is not None and response['slots']['Amount'] is None:
 
                                         name_of_client = response['slots']['ClientName']
                                         invoice_client = Customer.objects.filter(name__icontains=name_of_client).first()
@@ -186,7 +184,7 @@ def handle_slack_event(event):
                                     else:
                                         state.state = UserInteractionState.LINE_ITEM_DESCRIPTION_AWAITED
                                         state.save()
-                                        message = 'Great! Almost there. You are invoicing {} of $ {}. \n' \
+                                        message = 'Great! Almost there. You are invoicing {} for ${}. \n' \
                                                   'Now please enter the description.'.format(name_of_client, amount)
                                         client.api_call('chat.postMessage', channel=event['channel'],
                                                         text=message)
@@ -194,8 +192,7 @@ def handle_slack_event(event):
 
                             elif response['intentName'] == 'create_client':
                                 if response['dialogState'] == 'ElicitSlot':
-                                    if response['slots']['ClientName'] is not None and response[
-                                        'slotToElicit'] == 'ClientEmail':
+                                    if response['slots']['ClientName'] is not None and response['slotToElicit'] == 'ClientEmail':
                                         name_of_client = response['slots']['ClientName']
                                         customer = Customer.objects.filter(name__icontains=name_of_client).first()
                                         if not customer:
@@ -223,8 +220,7 @@ def handle_slack_event(event):
                                     client.api_call('chat.postMessage', channel=event['channel'],
                                                     text=response['message'], attachments=attachment_str)
                                     if 'invoice' in response['sessionAttributes'].keys():
-                                        if response['sessionAttributes']['invoice']['ClientName'] == response['slots'][
-                                            'ClientName']:
+                                        if response['sessionAttributes']['invoice']['ClientName'] == response['slots']['ClientName']:
                                             session = json.loads(response['sessionAttributes']['invoice'])
                                             client_name = session['ClientName']
                                             total_amount = session['Amount']
@@ -247,7 +243,7 @@ def handle_slack_event(event):
                                                                 text=response2['message'])
                                                 state.state = UserInteractionState.LINE_ITEM_DESCRIPTION_AWAITED
                                                 state.save()
-                                                message = 'Great! Almost there. You are invoicing {} of $ {}. \n' \
+                                                message = 'Great! Almost there. You are invoicing {} for ${}. \n' \
                                                           'Now please enter the description.'.format(client_name,
                                                                                                      total_amount)
                                                 client.api_call('chat.postMessage', channel=event['channel'],

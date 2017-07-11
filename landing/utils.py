@@ -75,7 +75,7 @@ def handle_slack_event(event):
                             userId=username,
                             inputText=inputstring
                         )
-                        print(response)
+
                         if "intentName" in response:
 
                             if response['intentName'] == 'settings':
@@ -300,6 +300,14 @@ def handle_slack_event(event):
 
                                 client.api_call('chat.postMessage', channel=event['channel'],
                                                 text=message, attachments=attachment_str)
+                        else:
+                            message = " :x: I am afraid I did not understand. Please type `help` to know more about me.\n" \
+                                      "What are you looking for?"
+                            attachments = build_attachment_for_error()
+                            attachment_str = json.dumps(attachments)
+
+                            client.api_call('chat.postMessage', channel=event['channel'],
+                                            text=message, attachments=attachment_str)
 
                     elif state.state == UserInteractionState.LINE_ITEM_DESCRIPTION_AWAITED:
 

@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'vj1na+kigb1@cr=y@ohpt@1!!96v1fos+fn^m1z*y4g^578lv!'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG_MODE', False)
 
 ALLOWED_HOSTS = []
 
@@ -137,26 +137,23 @@ AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
 AWS_STORAGE_BUCKET_NAME = os.environ['AWS_STORAGE_BUCKET_NAME']
 
 
-
-
 AWS_HEADERS = {
   'Cache-Control': 'max-age=86400',
 }
 
 AWS_QUERYSTRING_AUTH = False
 
-
-
-
 SLACK_CLIENT_ID = os.getenv('SLACK_CLIENT_ID')
 SLACK_CLIENT_SECRET = os.getenv('SLACK_CLIENT_SECRET')
-
 
 STRIPE_CLIENT_ID = os.getenv('STRIPE_CLIENT_ID')
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUB_KEY')
 STRIPE_CLIENT_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+
 STRIPE_CONNECT_URL = 'https://connect.stripe.com/oauth/authorize?response_type=code&client_id=%s&scope=read_write' % STRIPE_CLIENT_ID
 STRIPE_OAUTH_URL = 'https://connect.stripe.com/oauth/token'
+
+SAMPLE_INVOICE_URL = os.getenv("SAMPLE_INVOICE_URL", "https://www.invoicetron.com/static/sample_invoice.png")
 
 
 RQ_QUEUES = {

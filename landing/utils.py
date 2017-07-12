@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from accounts.models import Employee, Team, Customer, Company
 from accounts.utils import build_attachments_for_edited_invoice, send_message_to_user, build_attachments_for_invoice, \
     build_attachment_for_confirmed_invoice, build_attachment_for_error, build_message_for_help, \
-    build_attachment_for_listing_clients, build_attachment_for_settings, \
+    build_attachment_for_listing_clients, build_payload_for_settings, \
     build_attachment_for_editing_client, build_attachment_for_new_invoice, build_attachment_for_no_clients, \
     build_attachment_for_pagination_for_invoices, \
     build_attachment_for_pagination_for_clients
@@ -16,9 +16,11 @@ import boto3
 from slackclient import SlackClient
 import json
 
+
 def handle_slack_events(events):
     for event in events:
         handle_slack_event(event)
+
 
 def handle_slack_event(event):
     if 'type' in event.keys() and event['type'] == 'message':
@@ -83,16 +85,7 @@ def handle_slack_event(event):
 
                                     owner = Team.objects.filter(owner=employee).first()
                                     if owner:
-                                        company_name = company.company_name
-                                        company_logo = company.company_logo
-
-                                        if not company_name:
-                                            company_name=None
-                                        if not company_logo:
-                                            company_logo=None
-
-                                        message = ''
-                                        attachments = build_attachment_for_settings(team, company_name=company_name,company_logo=company_logo)
+                                        message, attachments = build_payload_for_settings(team)
                                         attachment_str = json.dumps(attachments)
                                         client.api_call('chat.postMessage', channel=event['channel'],
                                                         text=message, attachments=attachment_str)
@@ -376,16 +369,10 @@ def handle_slack_event(event):
 
                         state.state = UserInteractionState.CHILLING
                         state.save()
-
-                        company_name = company.company_name
-
-                        company_logo = company.company_logo
-                        if not company_name:
-                            company_name = None
-                        if not company_logo:
-                            company_logo = None
                         message = "Great!"
-                        attachments = build_attachment_for_settings(team, company_name=company_name, company_logo=company_logo)
+
+                        m, attachments = build_payload_for_settings(team)
+
                         send_message_to_user(message, employee, team, attachments)
 
                     elif state.state == UserInteractionState.CLIENT_NAME_AWAITED:
@@ -418,11 +405,13 @@ def handle_slack_event(event):
                         attachments = build_attachment_for_editing_client(customer)
                         send_message_to_user(message, employee, team, attachments)
 
+
 def create_invoice(invoice_client, employee, amount):
     invoice = Invoice.objects.create(client=invoice_client,author=employee)
     line_item = LineItem.objects.create(invoice=invoice, amount=amount)
     line_item.edited_details_awaited_from = employee
     line_item.save()
+
 
 def list_invoices(employee, team, page, payment_status, sent_status):
 
@@ -462,6 +451,7 @@ def list_invoices(employee, team, page, payment_status, sent_status):
 
     return message,attachments
 
+
 def list_clients(employee, team, page):
 
     customers = Customer.objects.filter(team=team).all()
@@ -490,6 +480,7 @@ def list_clients(employee, team, page):
 
     return message, attachments
 
+
 def call_lex_for_creating_invoice(username, channel_id, json_data, customer=None):
     client2 = boto3.client('lex-runtime')
     if customer:
@@ -507,6 +498,7 @@ def call_lex_for_creating_invoice(username, channel_id, json_data, customer=None
 
     send_message_to_user(message=response['message'],employee=employee, team=team,channel_id=channel_id)
 
+
 def call_lex_for_creating_client(username, json_data, channel_id):
     client2 = boto3.client('lex-runtime')
     inputstring = "create client"
@@ -520,6 +512,7 @@ def call_lex_for_creating_client(username, json_data, channel_id):
     team = Team.objects.filter(slack_team_id=json_data['team']['id']).first()
 
     send_message_to_user(message=response['message'], employee=employee, team=team, channel_id=channel_id)
+
 
 def upload_logo(event):
 
@@ -573,40 +566,5 @@ def save_logo(url, team, company, employee):
         company_name = None
     if not company_logo:
         company_logo = None
-    attachments = build_attachment_for_settings(team=team, company_name=company_name, company_logo=company_logo)
+    m, attachments = build_payload_for_settings(team=team, company_name=company_name, company_logo=company_logo)
     send_message_to_user(message=message, employee=employee, team=team, attachments=attachments)
-
-
-
-
-event = {'channel': 'D5WC1TV0V',
- 'bot_id': None,
- 'user_team': 'T5M4SAEBY',
- 'subtype': 'file_share',
- 'text': '<@U5WAKNTC4|shahtanmay69> uploaded a file: <https://attendancebot.slack.com/files/shahtanmay69/F644LQJH2/screenshot_from_2017-06-26_19-25-25.png|Screenshot from 2017-06-26 19-25-25.png>',
- 'event_ts': '1499262368.799779',
- 'ts': '1499262368.799779',
- 'source_team': 'T5M4SAEBY',
- 'username': 'shahtanmay69',
- 'upload': True,
- 'type': 'message',
- 'user_profile': {'real_name': 'ironman',
-                  'first_name': 'ironman',
-                  'current_status': None,
-                  'name': 'shahtanmay69',
-                  'image_72': 'https://secure.gravatar.com/avatar/77ab8e21112019951896728e52e01ac1.jpg?s=72&d=https%3A%2F%2Fa.slack-edge.com%2F66f9%2Fimg%2Favatars%2Fava_0026-72.png',
-                  'avatar_hash': 'g77ab8e21112'
-                  },
- 'file': {'thumb_160': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_160.png',
-          'ims': [],
-          'thumb_800': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_800.png',
-          'thumb_960_w': 960,
-          'thumb_1024_w': 1024,
-          'mode': 'hosted',
-          'thumb_720_h': 355,
-          'user': 'U5WAKNTC4',
-          'original_w': 1295, 'url_private': 'https://files.slack.com/files-pri/T5M4SAEBY-F644LQJH2/screenshot_from_2017-06-26_19-25-25.png', 'display_as_bot': False, 'thumb_480_h': 237, 'size': 141678, 'name': 'Screenshot from 2017-06-26 19-25-25.png', 'original_h': 639, 'thumb_480': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_480.png', 'thumb_360_w': 360, 'thumb_800_h': 395, 'thumb_1024_h': 505, 'permalink_public': 'https://slack-files.com/T5M4SAEBY-F644LQJH2-1593e7a978', 'editable': False, 'title': 'Screenshot from 2017-06-26 19-25-25.png', 'thumb_960': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_960.png', 'thumb_720': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_720.png', 'public_url_shared': False, 'url_private_download': 'https://files.slack.com/files-pri/T5M4SAEBY-F644LQJH2/download/screenshot_from_2017-06-26_19-25-25.png', 'thumb_80': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_80.png', 'timestamp': 1499262364, 'username': '', 'image_exif_rotation': 1, 'filetype': 'png', 'permalink': 'https://attendancebot.slack.com/files/shahtanmay69/F644LQJH2/screenshot_from_2017-06-26_19-25-25.png', 'is_public': False, 'thumb_360': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_360.png', 'is_external': False, 'mimetype': 'image/png', 'thumb_1024': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_1024.png', 'thumb_800_w': 800, 'channels': [], 'id': 'F644LQJH2', 'pretty_type': 'PNG', 'external_type': '', 'groups': [], 'thumb_720_w': 720, 'created': 1499262364, 'thumb_480_w': 480, 'thumb_360_h': 178, 'comments_count': 0, 'thumb_960_h': 474, 'thumb_64': 'https://files.slack.com/files-tmb/T5M4SAEBY-F644LQJH2-61931d842c/screenshot_from_2017-06-26_19-25-25_64.png'},
- 'user': 'U5WAKNTC4',
- 'team': 'T5M4SAEBY',
- 'display_as_bot': False
- }

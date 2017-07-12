@@ -1,6 +1,6 @@
 import json
 from accounts.models import Customer, Company
-
+from django.conf import settings
 
 def open_dm_channel(sc, user_id):
     open_channel = sc.api_call('im.open', user=user_id)
@@ -9,6 +9,7 @@ def open_dm_channel(sc, user_id):
     else:
         print('Error opening DM channel')
         return None
+
 
 def send_message_to_user(message, employee, team, attachments=None, channel_id=None):
     attachment_str = ''
@@ -21,6 +22,7 @@ def send_message_to_user(message, employee, team, attachments=None, channel_id=N
         channel_id = open_dm_channel(client, employee.user.username)
 
     client.api_call('chat.postMessage', channel=channel_id, text=message, attachments=attachment_str)
+
 
 def build_attachments_for_invoice(invoice):
     attachment = {"title": "Invoice #%d" % invoice.id, "text": "", "color": "good"}
@@ -87,6 +89,7 @@ def build_attachments_for_invoice(invoice):
 
     return [attachment]
 
+
 def build_attachments_for_edited_invoice(invoice):
     edited_attachment = {"title": "Invoice id #%d" % invoice.id, "text": "", "color": "good"}
     edited_attachment["callback_id"] = "invoice_edition:%d" % invoice.id
@@ -150,6 +153,7 @@ def build_attachments_for_edited_invoice(invoice):
     edited_attachment["fields"] = fields
     return [edited_attachment]
 
+
 def build_attachment_for_confirmed_invoice(invoice):
     attachment = {"title": "Invoice #%d" % invoice.id, "text": "", "color": "good"}
 
@@ -202,6 +206,7 @@ def build_attachment_for_confirmed_invoice(invoice):
     attachment["fields"] = fields
 
     return [attachment]
+
 
 def build_attachment_for_listing_clients(customer, add_more):
     attachment = {"title": "" , "text": "", "color": "good"}
@@ -268,6 +273,7 @@ def build_attachment_for_listing_clients(customer, add_more):
 
     return [attachment]
 
+
 def build_attachment_for_editing_client(customer):
     attachment = {"title": "", "text": "", "color": "good"}
 
@@ -311,6 +317,7 @@ def build_attachment_for_editing_client(customer):
 
     return [attachment]
 
+
 def build_attachment_for_error():
     attachment = {"title": "", "text": ""}
 
@@ -341,6 +348,7 @@ def build_attachment_for_error():
 
     return [attachment]
 
+
 def build_message_for_help():
     message = "Hi :wave: I am InvoiceTron. I can help you invoice your clients. \n" \
               "Type `create invoice` to create and send invoices\n" \
@@ -350,159 +358,62 @@ def build_message_for_help():
 
     return message
 
-def build_attachment_for_settings(team, company_name=None, company_logo=None):
-    company = Company.objects.get(name=team.slack_team_id)
-    print(company_name)
-    print(company_logo)
-    attachment = {"title": "", "text": ""}
+
+def build_payload_for_settings(team):
+    company = Company.objects.filter(name=team.slack_team_id).first()
+
+    attachment = { "title": "", "color": "#F4B042", "text": ""}
 
     attachment["callback_id"] = "settings:%d" % team.id
 
-    if company_name is None and company_logo is None:
-        fields = [
-            {
-                "title": "You have not entered your company details",
-                "value": "",
-                "short": True
-            }
-        ]
-    elif company_name is not None and company_logo is not None:
-
-        fields = [
-            {
-                "title": "Legal Name",
-                "value": company.company_name,
-                "short": True
-            },
-            {
-                "title": "Company Logo",
-                "value": '<%s|click here>' % company.company_logo.url,
-                "short": True
-            }
+    fields = [
+        {
+            "title": "Legal Name",
+            "value": company.company_name if company.company_name else "Not Added",
+            "short": True
+        },
+        {
+            "title": "Company Logo",
+            "value": '<%s|click here>' % company.company_logo.url if company.company_logo else "Not Uploaded",
+            "short": True
+        }
     ]
-
-    elif company_name is not None and company_logo is None:
-
-        fields = [
-            {
-                "title": "Legal Name",
-                "value": company.company_name,
-                "short": True
-            }
-        ]
-    else:
-
-        fields = [
-            {
-                "title": "Company Logo",
-                "value": '<%s|click here>' % company.company_logo.url,
-                "short": True
-            }
-        ]
 
 
     attachment["fields"] = fields
 
-    if company_name is not None and company_logo is not None:
+    actions = [
+        {
+            "name": "settings",
+            "text": "Edit logo" if company.company_logo else "Upload Logo",
+            "value": "logo",
+            "type": "button"
+        },
+        {
+            "name": "settings",
+            "text": "Edit Legal Name" if company.company_name else "Add Legal Name",
+            "value": "name",
+            "type": "button"
+        },
 
-        actions = [
-            {
-                "name": "settings",
-                "text": "Edit logo",
-                "value": "logo",
-                "type": "button"
-            },
-            {
-                "name": "settings",
-                "text": "Edit Legal Name",
-                "value": "name",
-                "type": "button"
-            },
-
-            {
-                "name": "settings",
-                "text": "Connect Stripe",
-                "value": "stripe_connect",
-                "type": "button"
-            }
-        ]
-
-    elif company_name is not None and company_logo is None:
-        actions = [
-            {
-                "name": "settings",
-                "text": "Add logo",
-                "value": "logo",
-                "type": "button"
-            },
-            {
-                "name": "settings",
-                "text": "Edit Legal Name",
-                "value": "name",
-                "type": "button"
-            },
-
-            {
-                "name": "settings",
-                "text": "Connect Stripe",
-                "value": "stripe_connect",
-                "type": "button"
-            }
-        ]
-
-    elif company_name is None and company_logo is not None:
-        actions = [
-            {
-                "name": "settings",
-                "text": "Edit logo",
-                "value": "logo",
-                "type": "button"
-            },
-            {
-                "name": "settings",
-                "text": "Add Legal Name",
-                "value": "name",
-                "type": "button"
-            },
-
-            {
-                "name": "settings",
-                "text": "Connect Stripe",
-                "value": "stripe_connect",
-                "type": "button"
-            }
-        ]
-
-    else:
-        actions = [
-            {
-                "name": "settings",
-                "text": "Add logo",
-                "value": "logo",
-                "type": "button"
-            },
-            {
-                "name": "settings",
-                "text": "Add Legal Name",
-                "value": "name",
-                "type": "button"
-            },
-
-            {
-                "name": "settings",
-                "text": "Connect Stripe",
-                "value": "stripe_connect",
-                "type": "button"
-            }
-        ]
-
-
+        {
+            "name": "settings",
+            "text": "Connect Stripe",
+            "value": "stripe_connect",
+            "type": "button"
+        }
+    ]
 
     attachment["actions"] = actions
 
+    if company.company_name and company.company_logo:
+        message = "Your settings"
+    else:
+        message = "Configure your settings so that your invoices have all the details.\n" \
+                  "Here is a <%s|sample invoice>" % settings.SAMPLE_INVOICE_URL
 
+    return message, [attachment]
 
-    return [attachment]
 
 def build_attachment_for_no_clients():
     attachment = {"title": "", "text": "", "color": "good"}

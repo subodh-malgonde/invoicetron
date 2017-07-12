@@ -9,7 +9,7 @@
 
               display: block;
               max-width:230px;
-              max-height:95px;
+              max-height:140px;
               width: auto;
               height: auto;
           }
@@ -170,34 +170,30 @@
               <tr class="details">
                   <td>
                       {{ payment_status }}
-
                   </td>
-
               </tr>
                 <tr>
                 <td>
                   {% if invoice.payment_status == 'paid' %}
-
                         Paid On : {{ payment_date }}
-                        {% else %}
-                            {% if stripe == True %}
-                                <form action="" method="POST">
-                                  <script
-                                    src="https://checkout.stripe.com/v2/checkout.js" class="stripe-button"
-                                    data-key={{ stripe_pub_key }}
-                                    data-amount={{ amount }}
-                                    data-name="InvoiceTron"
-                                    data-description={{ invoice.author.company.company_name }}>
-                                  </script>
-                                </form>
-                            {% endif %}
+                  {% else %}
+                      {% if stripe %}
+                          <form action="" method="POST">
+                              <script
+                                src="https://checkout.stripe.com/v2/checkout.js" class="stripe-button"
+                                data-key={{ stripe_pub_key }}
+                                data-amount={{ amount }}
+                                data-name="InvoiceTron"
+                                data-description={{ invoice.author.company.company_name }}>
+                              </script>
+                          </form>
+                      {% endif %}
                 {% endif %}
                 </td>
                   <td>
                   <form action="" method="post">
-                    {% csrf_token %}
-
-                        <input type="submit" value="Generate PDF" name="download">
+                     {% csrf_token %}
+                     <input type="submit" value="Generate PDF" name="download">
                   </form>
                   </td>
               </tr>

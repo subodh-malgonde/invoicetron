@@ -2,6 +2,7 @@ import django_rq
 from django.db import models
 from django.contrib.auth.models import User
 from slackclient import SlackClient
+from django.conf import settings
 
 
 def logo_upload_location(company, filename):
@@ -62,7 +63,7 @@ class Company(models.Model):
 
         elif selected_value == "stripe_connect":
 
-            from accounts.utils import build_attachment_for_settings
+            from accounts.utils import build_payload_for_settings
             from django.conf import settings
             team = Team.objects.get(slack_team_id=json_data['team']['id'])
             stripe_account = StripeAccountDetails.objects.filter(team=team).first()
@@ -73,16 +74,7 @@ class Company(models.Model):
 
             else:
                 response_message = 'You already have stripe account connected with your team'
-
-                company_name = company.company_name
-
-                company_logo = company.company_logo
-
-                if not company_name:
-                    company_name = None
-                if not company_logo:
-                    company_logo = None
-                attachments = build_attachment_for_settings(team,company_name=company_name, company_logo=company_logo)
+                m, attachments = build_payload_for_settings(team)
 
         return response_message, attachments
 
@@ -261,3 +253,25 @@ class StripeAccountDetails(models.Model):
     stripe_user_id = models.CharField(max_length=100)
     stripe_publish_key = models.CharField(max_length=100)
     stripe_access_token = models.CharField(max_length=100)
+
+
+def onboard_team(team):
+    from landing.utils import send_message_to_user
+    attachments = [
+        {
+            "title": "",
+            "text": "This is how a sample invoice looks like",
+            "image_url": settings.SAMPLE_INVOICE_URL,
+            "color": "#F4B042"
+        },
+        {
+            "title": "",
+            "text": "Type `settings` to setup your team",
+            "color": "good"
+        }
+    ]
+
+    message = "Hi! Welcome to Invoicetron :wave:\n" \
+              "I can help you create invoices and receive payments for them directly in your stripe account."
+
+    send_message_to_user(message=message, employee=team.owner, team=team, attachments=attachments)

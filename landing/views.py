@@ -68,16 +68,17 @@ def slack_hook(request):
 def generate_invoice(request, invoice_id):
     try:
         invoice = Invoice.objects.get(pk=invoice_id)
-        payment_status = invoice.get_payment_status_display()
-        payment_date = invoice.payment_date
-        stripe_pub_key = settings.STRIPE_PUBLIC_KEY
-
-        if payment_date:
-            date = invoice.payment_date.date()
-        else:
-            date = None
     except Invoice.DoesNotExist:
-        raise Http404("Invoice does not exist")
+        return HttpResponse("Invoice does not exist", status=404)
+
+    payment_status = invoice.get_payment_status_display()
+    payment_date = invoice.payment_date
+    stripe_pub_key = settings.STRIPE_PUBLIC_KEY
+
+    if payment_date:
+        date = invoice.payment_date.date()
+    else:
+        date = None
 
     if request.method == "GET":
         stripe_status = False
@@ -169,7 +170,6 @@ def stripe_oauth(request):
     return render(request, 'website/post_connecting_stripe.html')
 
 
-
 def slack_oauth(request):
 
     if request.method == "GET":
@@ -186,9 +186,11 @@ def slack_oauth(request):
         url = 'https://slack.com/api/oauth.access'
         json_response = requests.get(url, params)
         data = json.loads(json_response.text)
-        employee,team = Employee.consume_slack_data(data)
+        employee, team = Employee.consume_slack_data(data)
 
-        send_message_to_user(message="Hi. Welcome to Invoicetron", employee=employee, team=team)
+        from accounts.models import onboard_team
+        onboard_team(team)
+
         return render(request, 'website/adminbot_post_add_slack.html')
 
 

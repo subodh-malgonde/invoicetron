@@ -80,17 +80,16 @@ def handle_slack_event(event):
 
                         if "intentName" in response:
 
-                            if response['intentName'] == 'settings':
+                            if response['intentName'] in ['settings', 'settings_faq']:
                                 if response['dialogState'] == 'Fulfilled':
-
-                                    owner = Team.objects.filter(owner=employee).first()
-                                    if owner:
+                                    if team.owner_id == employee.id:
                                         message, attachments = build_payload_for_settings(team)
                                         attachment_str = json.dumps(attachments)
                                         client.api_call('chat.postMessage', channel=event['channel'],
                                                         text=message, attachments=attachment_str)
                                     else:
-                                        message = ' :x: You cannot manage settings because you are not the owner of the company.'
+                                        message = ' :x: Only team admins can manage settings such as stripe account,' \
+                                                  ' company logo etc.\nThe admin for your team is <@%s>.' % team.owner.user.username
                                         client.api_call('chat.postMessage', channel=event['channel'],
                                                         text=message)
 
@@ -280,7 +279,8 @@ def handle_slack_event(event):
                                                 text=message)
 
                             elif response['intentName'] == 'send_invoices':
-                                message = "The functionality to send invoices is a work in progress! We will notify I am capable of sending invoices."
+                                message = "The functionality to send invoices is a work in progress! " \
+                                          "I will notify you when I am capable of sending invoices."
                                 client.api_call('chat.postMessage', channel=event['channel'], text=message)
 
                             elif response['intentName'] == 'list_clients':

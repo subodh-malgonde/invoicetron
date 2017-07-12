@@ -11,7 +11,7 @@ def open_dm_channel(sc, user_id):
         return None
 
 
-def send_message_to_user(message, employee, team, attachments=None, channel_id=None):
+def send_message_to_user(message, employee, team, attachments=None, channel_id=None, unfurl_media=False):
     attachment_str = ''
     if attachments:
         attachment_str = json.dumps(attachments)
@@ -21,7 +21,7 @@ def send_message_to_user(message, employee, team, attachments=None, channel_id=N
     if not channel_id:
         channel_id = open_dm_channel(client, employee.user.username)
 
-    client.api_call('chat.postMessage', channel=channel_id, text=message, attachments=attachment_str)
+    client.api_call('chat.postMessage', channel=channel_id, text=message, attachments=attachment_str, unfurl_media=unfurl_media)
 
 
 def build_attachments_for_invoice(invoice):

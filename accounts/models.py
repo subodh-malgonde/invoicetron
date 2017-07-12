@@ -274,4 +274,4 @@ def onboard_team(team):
     message = "Hi! Welcome to Invoicetron :wave:\n" \
               "I can help you create invoices and receive payments for them directly in your stripe account."
 
-    send_message_to_user(message=message, employee=team.owner, team=team, attachments=attachments)
+    send_message_to_user(message=message, employee=team.owner, team=team, attachments=attachments, unfurl_media=True)

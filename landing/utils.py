@@ -81,17 +81,13 @@ def handle_slack_event(event):
                         if "intentName" in response:
 
                             if response['intentName'] in ['settings', 'settings_faq']:
-                                if response['dialogState'] == 'Fulfilled':
-                                    if team.owner_id == employee.id:
-                                        message, attachments = build_payload_for_settings(team)
-                                        attachment_str = json.dumps(attachments)
-                                        client.api_call('chat.postMessage', channel=event['channel'],
-                                                        text=message, attachments=attachment_str)
-                                    else:
-                                        message = ' :x: Only team admins can manage settings such as stripe account,' \
-                                                  ' company logo etc.\nThe admin for your team is <@%s>.' % team.owner.user.username
-                                        client.api_call('chat.postMessage', channel=event['channel'],
-                                                        text=message)
+                                if team.owner_id == employee.id:
+                                    message, attachments = build_payload_for_settings(team)
+                                    send_message_to_user(message, employee, team, attachments=attachments, channel_id=event['channel'])
+                                else:
+                                    message = ' :x: Only team admins can manage settings such as stripe account,' \
+                                              ' company logo etc.\nThe admin for your team is <@%s>.' % team.owner.user.username
+                                    send_message_to_user(message, employee, team, channel_id=event['channel'])
 
                             elif response['intentName'] == 'create_invoice':
                                 if response['dialogState'] == 'ElicitSlot':
@@ -275,36 +271,28 @@ def handle_slack_event(event):
 
                             elif response['intentName'] == 'start':
                                 message = build_message_for_help()
-                                client.api_call('chat.postMessage', channel=event['channel'],
-                                                text=message)
-
+                                send_message_to_user(message=message, employee=employee, team=team, channel_id=event['channel'])
                             elif response['intentName'] == 'send_invoices':
                                 message = "The functionality to send invoices is a work in progress! " \
                                           "I will notify you when I am capable of sending invoices."
-                                client.api_call('chat.postMessage', channel=event['channel'], text=message)
+                                send_message_to_user(message, employee, team, channel_id=event['channel'])
 
                             elif response['intentName'] == 'list_clients':
                                 if response['dialogState'] == 'Fulfilled':
                                     message, attachments = list_clients(employee, team, page=1)
                                     send_message_to_user(message=message, employee=employee, team=team,
-                                                         attachments=attachments)
+                                                         attachments=attachments, channel_id=event['channel'])
 
                             else:
                                 message = " :x: I am afraid I did not understand. Please type `help` to know more about me.\n" \
                                           "What are you looking for?"
                                 attachments = build_attachment_for_error()
-                                attachment_str = json.dumps(attachments)
-
-                                client.api_call('chat.postMessage', channel=event['channel'],
-                                                text=message, attachments=attachment_str)
+                                send_message_to_user(message, employee, team, attachments=attachments, channel_id=event['channel'])
                         else:
                             message = " :x: I am afraid I did not understand. Please type `help` to know more about me.\n" \
                                       "What are you looking for?"
                             attachments = build_attachment_for_error()
-                            attachment_str = json.dumps(attachments)
-
-                            client.api_call('chat.postMessage', channel=event['channel'],
-                                            text=message, attachments=attachment_str)
+                            send_message_to_user(message, employee, team, attachments=attachments, channel_id=event['channel'])
 
                     elif state.state == UserInteractionState.LINE_ITEM_DESCRIPTION_AWAITED:
 

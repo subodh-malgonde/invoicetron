@@ -178,6 +178,8 @@
                                 data-description={{ invoice.author.company.company_name }}>
                               </script>
                           </form>
+                      {% else %}
+                          <p style="color: red">{{ connect_to_stripe_message }}</p>
                       {% endif %}
                 {% endif %}
                 </td>

@@ -130,12 +130,17 @@ def generate_invoice(request, invoice_id):
     stripe_status = False
     team = Team.objects.filter(slack_team_id=invoice.author.company.name).first()
     stripe_account = StripeAccountDetails.objects.filter(team=team).first()
+    connect_to_stripe_message = ""
     if stripe_account:
         stripe_status = True
+    else:
+        connect_to_stripe_message = "Connect to stripe to access payments."
+
 
     context = {
         'invoice': invoice, 'payment_status': payment_status, 'stripe': stripe_status, 'payment_date': payment_date,
-        'stripe_pub_key': stripe_pub_key, 'charge_status': charge_status, 'logo_url': logo_url
+        'stripe_pub_key': stripe_pub_key, 'charge_status': charge_status, 'logo_url': logo_url,
+        'connect_to_stripe_message': connect_to_stripe_message
     }
 
     return render(request, 'application/invoice.html', context)

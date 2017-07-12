@@ -154,6 +154,7 @@ STRIPE_CONNECT_URL = 'https://connect.stripe.com/oauth/authorize?response_type=c
 STRIPE_OAUTH_URL = 'https://connect.stripe.com/oauth/token'
 
 SAMPLE_INVOICE_URL = os.getenv("SAMPLE_INVOICE_URL", "https://www.invoicetron.com/static/sample_invoice.png")
+PLACEHOLDER_LOGO_URL = os.getenv("PLACEHOLDER_LOGO_URL", "https://www.invoicetron.com/static/placeholder_logo.png")
 
 
 RQ_QUEUES = {

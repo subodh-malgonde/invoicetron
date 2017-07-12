@@ -88,14 +88,8 @@
                       <table>
                           <tr>
                               <td class="title">
-                                  {% if invoice.author.company.company_logo.url != None  %}
-                                      <img class="image" src={{ invoice.author.company.company_logo.url }}>
-                                  {% else %}
-                                      Invoice
-                                  {% endif %}
-
+                                  <img class="image" src={{ logo_url }}>
                               </td>
-
                               <td>
                                   Invoice #{{ invoice.id }}<br>
                                   Date: {{ invoice.created_at.date }}<br>
@@ -111,13 +105,10 @@
                           <tr>
                               <td>
                                   From:<br>
-                                  {% if invoice.author.company.company_name != None  %}
-                                      {{ invoice.author.company.company_name }}<br>
-                                  {% endif %}
+                                  {{ invoice.author.company.company_name|default:'YOUR_LEGAL_NAME' }}<br>
                                   <br>
 
                               </td>
-
                               <td>
                                   To:<br>
                                   {{ invoice.client.name }}<br>
@@ -199,7 +190,7 @@
               </tr>
           <tr>
           <td>
-          {% if charge_status != None %}
+          {% if charge_status %}
               Your payment was {{ charge_status }}
           {% endif %}
           </td></tr>

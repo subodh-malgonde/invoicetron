@@ -124,7 +124,7 @@ def handle_slack_event(event):
                                         name_of_client = response['slots']['ClientName']
                                         invoice_client = Customer.objects.filter(name__icontains=name_of_client).first()
                                         if not invoice_client:
-                                            message = "Client '{}' is not created. Lets create the client first".format(
+                                            message = "Client with name '{}' does not exist. Lets create the client first".format(
                                                 name_of_client)
                                             client.api_call('chat.postMessage', channel=event['channel'],
                                                             text=message)
@@ -279,6 +279,10 @@ def handle_slack_event(event):
                                 client.api_call('chat.postMessage', channel=event['channel'],
                                                 text=message)
 
+                            elif response['intentName'] == 'send_invoices':
+                                message = "The functionality to send invoices is a work in progress! We will notify I am capable of sending invoices."
+                                client.api_call('chat.postMessage', channel=event['channel'], text=message)
+
                             elif response['intentName'] == 'list_clients':
                                 if response['dialogState'] == 'Fulfilled':
                                     message, attachments = list_clients(employee, team, page=1)
@@ -341,7 +345,7 @@ def handle_slack_event(event):
                         if '$' in new_message:
                             new_message = new_message.replace("$", "")
                         if not re.match('^[0-9]+$', new_message):
-                            message = "Enter the correct amount"
+                            message = "Please enter a valid amount, eg. $100"
                             send_message_to_user(message, employee, team)
                         else:
                             line_item = LineItem.objects.filter(edited_details_awaited_from=employee).first()

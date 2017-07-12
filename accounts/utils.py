@@ -406,11 +406,8 @@ def build_payload_for_settings(team):
 
     attachment["actions"] = actions
 
-    if company.company_name and company.company_logo:
-        message = "Your settings"
-    else:
-        message = "Configure your settings so that your invoices have all the details.\n" \
-                  "Here is a <%s|sample invoice>" % settings.SAMPLE_INVOICE_URL
+    message = "Configure your settings so that your invoices have all the details.\n" \
+              "Here is a <%s|sample invoice>" % settings.SAMPLE_INVOICE_URL
 
     return message, [attachment]
 

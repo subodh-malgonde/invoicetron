@@ -28,7 +28,7 @@ django-tinymce==2.3.0
 django-waffle==0.11.1
 django-wysiwyg==0.7.1
 docutils==0.13.1
-ecdsa==0.13
+ecdsa==0.13.3
 Fabric3==1.11.1.post1
 freezegun==0.3.8
 fuzzywuzzy==0.13.0

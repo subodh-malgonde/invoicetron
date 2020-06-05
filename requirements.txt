@@ -13,7 +13,7 @@ click==6.6
 cryptography==1.8.1
 defusedxml==0.4.1
 dj-database-url==0.4.1
-Django==1.9.6
+Django==1.11.29
 django-allauth==0.25.2
 django-bootstrap3==7.0.1
 django-money==0.9.1

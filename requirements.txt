@@ -40,7 +40,7 @@ httpsig==1.1.2
 icalendar==3.10
 ics==0.3.1
 idna==2.5
-Jinja2==2.9.6
+Jinja2==2.11.3
 jmespath==0.9.0
 MarkupSafe==1.0
 multidict==2.1.4

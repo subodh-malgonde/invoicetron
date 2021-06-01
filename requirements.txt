@@ -75,7 +75,7 @@ slackclient==1.0.0
 sqlparse==0.2.3
 stripe==1.59.0
 uritemplate==3.0.0
-urllib3==1.21.1
+urllib3==1.26.5
 webencodings==0.5.1
 websocket-client==0.40.0
 xhtml2pdf==0.2b1
